@@ -2,3 +2,4 @@ __pycache__
 common
 example_apparatus
 *.html
+.DS_store
