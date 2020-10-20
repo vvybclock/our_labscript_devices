@@ -27,7 +27,7 @@ class P7888(Device):
 	@set_passed_properties({'connection_table_properties': ['nDisplay']})
 	def __init__(self, name, nDisplay=0): #redefine the class constructor
 		#piggy back on working code for the class constructor
-		Device.__init__(self, name=name, parent_device=None, connection=None, **kwargs)
+		Device.__init__(self, name=name, parent_device=None, connection=None)
 
 		#add whatever else we need for the custom constructor i.e., class variables.
 		self.custom_class_variable = []
