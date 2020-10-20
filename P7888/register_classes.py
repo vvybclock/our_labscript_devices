@@ -33,5 +33,6 @@ from labscript_devices import register_classes
 register_classes(
 	'P7888',
 	BLACS_tab = 'user_devices.P7888.blacs_tabs.P7888_Tab',
+	#this tells BLACS where the gui tab is, the P7888_Tab tells blacs where the worker is.
 	runviewer_parser = None,
 )
