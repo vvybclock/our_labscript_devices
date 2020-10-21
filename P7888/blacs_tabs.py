@@ -15,13 +15,18 @@ class P7888_Tab(DeviceTab):
 		device = connection_table.find_by_name(self.device_name)
 
 		#pull particular settings needed here.
-		particular_setting = device.properties['particular_setting_identifier']
+		# particular_setting = device.properties['particular_setting_identifier']
+		self.nDisplay = device.properties['nDisplay']
 
 		#Start the worker process associated with our worker class.
 		#Pass it the particular settings it needs to connect.
 		self.create_worker(
 			'main_worker',
-			'user_devices.P7888.blacs_workers.P7888_Worker'
+			'user_devices.P7888.blacs_worker.P7888_Worker'
 		)
 
 		pass
+
+	#def initialize_gui(self):
+	#	pass
+	#		#I don't believe labscript has capabilities for outputting simple settings in the GUI.
