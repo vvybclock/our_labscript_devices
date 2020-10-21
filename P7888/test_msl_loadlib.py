@@ -20,7 +20,7 @@
 
 #test_my_client.py
 
-from msl.loadlib import Client64
+from msl.loadlib import Client64, IS_PYTHON_64BIT
 
 class MyClient(Client64):
 	""" Send a request to 'MyServer' to execute the 'add' method and get the response. """
@@ -35,5 +35,8 @@ class MyClient(Client64):
 		return self.request32('add', a , b)
 
 if __name__ == '__main__':
+	print("Is Python 64 bit?: {}".format(IS_PYTHON_64BIT))
+
 	my_client = MyClient()
-	print(my_client.add(1,2))
+
+	print("1+2 using 32 bit DLL: {}".format(my_client.add(1,2)))
