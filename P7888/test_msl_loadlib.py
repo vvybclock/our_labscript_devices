@@ -37,6 +37,8 @@ class MyClient(Client64):
 if __name__ == '__main__':
 	print("Is Python 64 bit?: {}".format(IS_PYTHON_64BIT))
 
+	print("Starting Client...")
 	my_client = MyClient()
-
-	print("1+2 using 32 bit DLL: {}".format(my_client.add(1,2)))
+	print("Calling from Client...")
+	for x in range(1,10):
+		print("1+2 using 32 bit DLL: {}".format(my_client.add(1,2)))
