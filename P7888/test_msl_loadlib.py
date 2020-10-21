@@ -36,4 +36,4 @@ class MyClient(Client64):
 
 if __name__ == '__main__':
 	my_client = MyClient()
-	print(c.add(1,2))
+	print(my_client.add(1,2))

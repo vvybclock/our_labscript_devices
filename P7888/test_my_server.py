@@ -5,7 +5,7 @@ class MyServer(Server32):
 
 	def __init__(self, host, port, quiet, **kwargs):
 		# Load the 'cpp_lib32' shared-library file using ctypes.CDLL
-		super(MyServer, self).__init__('cpp_lib32.dll', host, port, quiet)
+		super(MyServer, self).__init__('cpp_lib32.dll', 'cdll', host, port, quiet)
 
 	def add(self,a, b):
 		# The Server32 class has a 'lib' property that is a reference to the ctypes.CDLL object.
