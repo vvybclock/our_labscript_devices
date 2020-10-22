@@ -5,7 +5,7 @@
 
 from blacs.device_base_class import DeviceTab
 
-class P7888_Tab(DeviceTab):
+class P7888Tab(DeviceTab):
 	
 	def initialise_workers(self):
 		#Does spelling of the function name matter? (-ize vs -ise?)
@@ -16,17 +16,15 @@ class P7888_Tab(DeviceTab):
 
 		#pull particular settings needed here.
 		# particular_setting = device.properties['particular_setting_identifier']
-		self.nDisplay = device.properties['nDisplay']
+		nDisplay = device.properties['nDisplay']
+		nSystem = device.properties['nSystem']
 
 		#Start the worker process associated with our worker class.
 		#Pass it the particular settings it needs to connect.
 		self.create_worker(
 			'main_worker',
-			'user_devices.P7888.blacs_worker.P7888_Worker'
+			'user_devices.P7888.blacs_worker.P7888_Worker',
+			{'nDisplay' : nDisplay, 'nSystem' : nSystem},
 		)
 
-		pass
-
-	#def initialize_gui(self):
-	#	pass
-	#		#I don't believe labscript has capabilities for outputting simple settings in the GUI.
+		self.primary_worker = 'main_worker'

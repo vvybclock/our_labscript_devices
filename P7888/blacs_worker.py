@@ -4,7 +4,7 @@
 #To see how this file is accessed by labscript see register_classes.py
 
 #Add in libraries for communicating with the device
-import user_devices.P7888.p7888_dll
+import user_devices.P7888.p7888_photon_counter as p7888
 
 #Add in libraries for working with HDF files
 import labscript_utils.h5_lock
@@ -65,31 +65,42 @@ class TemplateWorker(Worker):
 
 		return True
 
+def write_empty(fname):
+	with open(r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888' + '\\' + fname + '.txt', 'w') as fp:
+		pass
+
 class P7888_Worker(Worker):
 	def init(self):
 		#define variable placeholders for the worker.
 		self.shot_file = None
+		# write_empty('_p7888_worker_init_ran')
 
-
-		pass
+		return True
 
 	def program_manual(self,values):
+		# write_empty('_p7888_worker_program_manual_ran')
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
 		# - Set the Device to respond to hardware triggers.
-		p7888_dll.Start()
+		# p7888_dll.Start()
+		# write_empty('_p7888_trans_to_buf_ran')
 		return {}
 
 	def transition_to_manual(self):
-		p7888_dll.Halt()
+		# p7888_dll.Halt()
+		# write_empty('_trans_to_man_ran')
 		return True
 
 	def shutdown(self):
-		pass
-
-	def abort_buffered(self):
+		# write_empty("_shutdown")
 		return True
 
+	def abort_buffered(self):
+		# return True
+		# write_empty("_ab_buff")
+		pass
+
 	def abort_transition_to_buffered(self):
+		# write_empty("_ab_trans_to_buff")
 		return True

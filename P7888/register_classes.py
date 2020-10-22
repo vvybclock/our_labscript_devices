@@ -30,9 +30,12 @@ from labscript_devices import register_classes
 # things to have.
 # Taken from https://github.com/labscript-suite/labscript-utils/blob/master/labscript_utils/device_registry/_device_registry.py
 
+with open(r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888\_register_class_ran.txt', 'w') as fp:
+	pass
+
 register_classes(
 	'P7888',
-	BLACS_tab = 'user_devices.P7888.blacs_tabs.P7888_Tab',
+	BLACS_tab = 'user_devices.P7888.blacs_tabs.P7888Tab',
 	#this tells BLACS where the gui tab is, the P7888_Tab tells blacs where the worker is.
 	runviewer_parser = None,
 )

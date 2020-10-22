@@ -2,7 +2,7 @@
 #		Written by Enrique Mendez (eqm@mit.edu)	c. 2020	
 ###########################################################################
 
-import p7888_dll
+import user_devices.P7888.p7888_dll
 
 def is_started(nDisplay=0):
 	status = p7888_dll.ACQSTATUS()
