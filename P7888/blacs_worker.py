@@ -83,46 +83,61 @@ class P7888_Worker(Worker):
 			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
 			return False
 
+		p7888.set_to_sweep_mode(self.nDisplay)
+		
 		return True
 
 	def program_manual(self,values):
-		# write_empty('_p7888_worker_program_manual_ran')
+		
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
+		#Set the settings on the Device.
+		p7888.set_to_sweep_mode(self.nDisplay)
+
 		# - Set the Device to respond to hardware triggers/ run in the experiment.
-		status = p7888.p7888_dll.ACQSTATUS()
-		p7888.p7888_dll.GetStatus(status, self.nDisplay)
-
-		p7888_is_not_started = not status.started
-
-		if p7888_is_not_started:
-			p7888.p7888_dll.Start(self.nSystem)
+		self.check_before_starting()
 
 		return {}
 
 	def transition_to_manual(self):
-		# p7888_dll.Halt()
-		# write_empty('_trans_to_man_ran')
+		# - Called after shot is finished.
+		# - The device should be placed in manual mode here.
+		# - Useful for saving data.
+		# - Return True on success.
+		self.check_before_halting()
 		return True
 
 	def shutdown(self):
 		# Called once when BLACS exits
-
-		status = p7888.p7888_dll.ACQSTATUS()
-		p7888.p7888_dll.GetStatus(status, self.nDisplay)
-
-		p7888_is_started = status.started
-
-		if p7888_is_started:
-			p7888.p7888_dll.Halt(self.nSystem)
+		self.check_before_halting()
 		return True
 
 	def abort_buffered(self):
 		# return True
 		# write_empty("_ab_buff")
-		pass
+		self.check_before_halting()
+		return True
 
 	def abort_transition_to_buffered(self):
 		# write_empty("_ab_trans_to_buff")
+		self.check_before_halting()
 		return True
+
+	def check_before_halting(self):
+		status = p7888.p7888_dll.ACQSTATUS()
+		p7888.p7888_dll.GetStatusData(ctypes.pointer(status), self.nDisplay)
+
+		p7888_is_started = status.started
+
+		if p7888_is_started:
+			p7888.p7888_dll.Halt(self.nSystem)
+
+	def check_before_starting(self):
+		status = p7888.p7888_dll.ACQSTATUS()
+		p7888.p7888_dll.GetStatusData(ctypes.pointer(status), self.nDisplay)
+
+		p7888_is_not_started = not status.started
+
+		if p7888_is_not_started:
+			p7888.p7888_dll.Start(self.nSystem)
