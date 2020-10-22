@@ -11,8 +11,6 @@ class MyServer(Server32):
 		#Load the 'p7888_dll' using ctypes.WINDLL
 		super(MyServer, self).__init__('C:/Windows/SysWOW64/DP7888.DLL', 'windll', host, port, quiet)
 
-	def GetSettingData(self, nDisplay=0):
-		settings = ACQSETTING()
-		self.lib.GetSettingData(ctypes.pointer(settings), nDisplay)
-		return settings
 
+	def Start(self, nSystem = 0):
+		self.lib.Start(nSystem)
