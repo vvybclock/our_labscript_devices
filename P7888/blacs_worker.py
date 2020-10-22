@@ -5,6 +5,7 @@
 
 #Add in libraries for communicating with the device
 import user_devices.P7888.p7888_photon_counter as p7888
+import ctypes
 
 #Add in libraries for working with HDF files
 import labscript_utils.h5_lock
@@ -73,7 +74,14 @@ class P7888_Worker(Worker):
 	def init(self):
 		#define variable placeholders for the worker.
 		self.shot_file = None
-		# write_empty('_p7888_worker_init_ran')
+		
+		#check to see if the P7888 (64 bit) server is running.
+		settings = p7888.p7888_dll.ACQSETTING()
+		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
+
+		if returnVal == 0:
+			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
+			return False
 
 		return True
 
@@ -82,9 +90,15 @@ class P7888_Worker(Worker):
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
-		# - Set the Device to respond to hardware triggers.
-		# p7888_dll.Start()
-		# write_empty('_p7888_trans_to_buf_ran')
+		# - Set the Device to respond to hardware triggers/ run in the experiment.
+		status = p7888.p7888_dll.ACQSTATUS()
+		p7888.p7888_dll.GetStatus(status, self.nDisplay)
+
+		p7888_is_not_started = not status.started
+
+		if p7888_is_not_started:
+			p7888.p7888_dll.Start(self.nSystem)
+
 		return {}
 
 	def transition_to_manual(self):
@@ -93,7 +107,15 @@ class P7888_Worker(Worker):
 		return True
 
 	def shutdown(self):
-		# write_empty("_shutdown")
+		# Called once when BLACS exits
+
+		status = p7888.p7888_dll.ACQSTATUS()
+		p7888.p7888_dll.GetStatus(status, self.nDisplay)
+
+		p7888_is_started = status.started
+
+		if p7888_is_started:
+			p7888.p7888_dll.Halt(self.nSystem)
 		return True
 
 	def abort_buffered(self):
