@@ -3,7 +3,7 @@
 ###########################################################################
 
 import user_devices.P7888.p7888_dll as p7888_dll
-
+import ctypes
 def is_started(nDisplay=0):
 	status = p7888_dll.ACQSTATUS()
 	p7888_dll.GetStatusData(status,nDisplay)
@@ -200,7 +200,7 @@ def set_to_sweep_mode(nDisplay=0):
 	settings.calpoints = 0
 
 	#write_settings
-	p7888_dll.StoreSettingData(settings, nDisplay)
+	p7888_dll.StoreSettingData(ctypes.pointer(settings), nDisplay)
 
 
 

@@ -83,8 +83,11 @@ class P7888_Worker(Worker):
 			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
 			return False
 
+		#DEBUG CODE IS HERE.
 		p7888.set_to_sweep_mode(self.nDisplay)
-		
+		p7888.p7888_dll.NewSetting(self.nDevice)
+		p7888.p7888_dll.SaveSetting()
+
 		return True
 
 	def program_manual(self,values):
@@ -94,6 +97,7 @@ class P7888_Worker(Worker):
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
 		#Set the settings on the Device.
 		p7888.set_to_sweep_mode(self.nDisplay)
+
 
 		# - Set the Device to respond to hardware triggers/ run in the experiment.
 		self.check_before_starting()

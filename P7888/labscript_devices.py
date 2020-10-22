@@ -24,8 +24,8 @@ class P7888(Device):
 	# nDevices? nSystems?) to communicate with the appropriate card. So that is
 	# the property we decide to save. See p7888_photon_counter.py for explicit
 	# example usage.
-	@set_passed_properties({'connection_table_properties': ['nDisplay', 'nSystem']})
-	def __init__(self, name, nDisplay=0, nSystem=0): #redefine the class constructor
+	@set_passed_properties({'connection_table_properties': ['nDisplay', 'nSystem', 'nDevice']})
+	def __init__(self, name, nDisplay=0, nSystem=0,nDevice=0): #redefine the class constructor
 		#piggy back on working code for the class constructor
 		Device.__init__(self, name=name, parent_device=None, connection=None)
 

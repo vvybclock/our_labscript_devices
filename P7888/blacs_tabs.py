@@ -18,6 +18,7 @@ class P7888Tab(DeviceTab):
 		# particular_setting = device.properties['particular_setting_identifier']
 		nDisplay = device.properties['nDisplay']
 		nSystem = device.properties['nSystem']
+		nDevice = device.properties['nDevice']
 
 		#Start the worker process associated with our worker class.
 		#Pass it the particular settings it needs to connect.
