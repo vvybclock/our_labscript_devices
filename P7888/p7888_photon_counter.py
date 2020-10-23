@@ -206,10 +206,9 @@ def set_to_sweep_mode(nDisplay=0):
 	p7888_dll.StoreSettingData(ctypes.pointer(settings), nDisplay)
 
 def set_to_sweep_mode_via_cmd():
-	STR_BUFFER_TYPE	= p7888_dll.LPST*50
-	cmd_buffer     	= STR_BUFFER_TYPE() 
-	cmd_buffer = "alert Command Sent via Labscript."
-	p7888_dll.RunCmd(0, ctypes.byref(cmd_buffer))
+	cmd_buffer = ctypes.create_string_buffer(b"alert Command Sent via Labscript.")
+	print(ctypes.sizeof(cmd_buffer))
+	p7888_dll.RunCmd(0, cmd_buffer)
 
 
 if __name__ == '__main__':

@@ -88,6 +88,8 @@ class P7888_Worker(Worker):
 		p7888.p7888_dll.NewSetting(self.nDevice)
 		p7888.p7888_dll.SaveSetting()
 
+		p7888.set_to_sweep_mode_via_cmd()
+		
 		return True
 
 	def program_manual(self,values):
