@@ -95,6 +95,14 @@ class P7888_Worker(Worker):
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
+		#check to see if the P7888 (64 bit) server is running.
+		settings = p7888.p7888_dll.ACQSETTING()
+		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
+
+		if returnVal == 0:
+			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
+			return False		
+
 		#Set the settings on the Device.
 		p7888.set_to_sweep_mode(self.nDisplay)
 
