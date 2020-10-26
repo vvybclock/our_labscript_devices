@@ -5,6 +5,7 @@
 
 #Add in libraries for communicating with the device
 import user_devices.P7888.p7888_photon_counter as p7888
+import os
 import ctypes
 
 #Add in libraries for working with HDF files
@@ -79,6 +80,7 @@ class P7888_Worker(Worker):
 		settings = p7888.p7888_dll.ACQSETTING()
 		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
 
+		self.range = settings.range
 		if returnVal == 0:
 			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
 			return False
@@ -88,7 +90,7 @@ class P7888_Worker(Worker):
 		p7888.p7888_dll.NewSetting(self.nDevice)
 		p7888.p7888_dll.SaveSetting()
 
-		p7888.set_to_sweep_mode_via_cmd()
+		
 		
 		return True
 
@@ -106,8 +108,12 @@ class P7888_Worker(Worker):
 			return False		
 
 		#Set the settings on the Device.
-		p7888.set_to_sweep_mode(self.nDisplay)
+		# p7888.set_to_sweep_mode(self.nDisplay)
+		p7888.set_to_sweep_mode_via_cmd()
 
+		#remove old data file so we can run the P7888 without it asking about overwrites.
+		if os.path.exists(p7888.p7888_data_file):
+			os.remove(p7888.p7888_data_file)
 
 		# - Set the Device to respond to hardware triggers/ run in the experiment.
 		self.check_before_starting()
@@ -119,7 +125,22 @@ class P7888_Worker(Worker):
 		# - The device should be placed in manual mode here.
 		# - Useful for saving data.
 		# - Return True on success.
+
+		data = p7888.p7888_dll.ACQDATA()
+		DATA_ARRAY_TYPE = ctypes.c_ulong * self.range;
+		data.s0 = DATA_ARRAY_TYPE()
+
+		p7888.p7888_dll.GetData(ctypes.pointer(data),self.nDisplay)
+
+		with open('E:/P7888/data/pydata.txt','w') as f:
+			f.write('data\n')
+			for i in range(self.range):
+				f.write("{0:b}".format(data.s0[i]))
+				f.write('\n')
+
 		self.check_before_halting()
+
+
 		return True
 
 	def shutdown(self):

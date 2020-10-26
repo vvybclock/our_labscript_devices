@@ -7,6 +7,8 @@ import ctypes
 
 #nDisplay, nSystems, nDevices must be zero. its a backwards compatibility thing for MCDWIN.
 
+p7888_data_file = "C:\\P7888\\lsP7888.lst"
+
 def is_started(nDisplay=0):
 	status = p7888_dll.ACQSTATUS()
 	p7888_dll.GetStatusData(status,nDisplay)
@@ -206,9 +208,33 @@ def set_to_sweep_mode(nDisplay=0):
 	p7888_dll.StoreSettingData(ctypes.pointer(settings), nDisplay)
 
 def set_to_sweep_mode_via_cmd():
-	cmd_buffer = ctypes.create_string_buffer(b"alert Command Sent via Labscript.")
-	print(ctypes.sizeof(cmd_buffer))
-	p7888_dll.RunCmd(0, cmd_buffer)
+
+	commands = [
+		b"fmt=dat",
+		b"digio=0",
+		b"digval=0",
+		b"fstchan=0",
+		b"prena=0",
+		b"autoinc=0",
+		b"syncout=0",
+		b"savedata=2",
+		b"caluse=1",
+		b"caloff=0.0",
+		b"calfact=1.0",
+		b"calfact2=0",
+		b"calfact3=0",
+		b"calunit=nsec",
+		b"dac01=06660A00",
+		b"dac23=08000666",
+		b"range=497504",
+		b"bitshit=0",
+		bytes("datname=" + p7888_data_file, 'ascii'),
+		b"sweepmode=10A0",
+	]
+
+	for cmd in commands:
+		cmd_buffer = ctypes.create_string_buffer(cmd)
+		p7888_dll.RunCmd(0, cmd_buffer)
 
 
 if __name__ == '__main__':
