@@ -1,8 +1,11 @@
 ###########################################################################
 #		Written by Enrique Mendez (eqm@mit.edu)	c. 2020	
 ###########################################################################
+from msl.loadlib import IS_PYTHON_64BIT
+#this library isn't necessary. If you come up with another 64 bit detection method you can remove msl.loadlib
 
-from p7888_c_definitions import *
+from user_devices.P7888.p7888_c_definitions import *
+#from p7888_c_definitions import *
 import ctypes
 
 
@@ -13,11 +16,23 @@ import ctypes
 # Here we load the Dynamic Linked Library that allows sending commands to the
 # P7888 card provided we have enabled remote mode in the P7888 server. See
 # section 5.2 (p. 5-9) in the p7888 docs.
-comtec_dll = ctypes.windll.LoadLibrary("comctl32.dll")
+# comtec_dll = ctypes.windll.LoadLibrary("comctl32.dll")
+
 
 # In section 5.4, they instead reference "dp7888.dll"! This is what is used
 # for controlling the server.
-dp7888_dll = ctypes.windll.LoadLibrary("dp7888.dll")
+
+### !!! This DLL is 32 bit. Labscript runs in 64 bit. 
+
+if IS_PYTHON_64BIT:
+	print("Attempting 64 bit DLL execution...")
+	dp7888_dll = ctypes.windll.LoadLibrary("C:/Windows/System32/DP7888.DLL")
+else:
+	print("Attempting 32 bit DLL execution...")
+	dp7888_dll = ctypes.windll.LoadLibrary("C:/Windows/SysWOW64/DP7888.DLL")
+#dp7888_dll = ctypes.windll.LoadLibrary("${C:\\Windows\\SysWOW64\\DP7888.DLL}")
+# dp7888_dll = ctypes.windll.LoadLibrary("DP7888.DLL")
+# dp7888_dll = ctypes.windll.dp7888
 
 
 HWND = HANDLE
@@ -132,7 +147,7 @@ Erase.argtypes = [c_int]
 
 #SaveData
 #	Saves data
-#		VOID APIENTRY SaveData(int nDevice); 
+#		VOID APIENTRY SaveData(int nDevice);
 SaveData = dp7888_dll.SaveData
 SaveData.restype = None
 SaveData.argtypes = [c_int]
@@ -260,9 +275,12 @@ LVGetStr.restype = c_int
 LVGetStr.argtypes = [POINTER(c_char), c_int]
 
 if __name__ == '__main__':
-	settings = ACQSETTING()
-	nDisplay = 1
+	print("Is python 64 bit mode?: {}".format(IS_PYTHON_64BIT))	
 
+	settings = ACQSETTING()
+	nDisplay = 0
+	nSystem = 0
 	print(settings.range)
-	print(GetSettingData(settings,nDisplay))
+	GetSettingData(settings,nDisplay)
+	Start(nSystem)
 	print(settings.range)

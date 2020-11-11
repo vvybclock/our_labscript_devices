@@ -5,7 +5,7 @@
 
 from blacs.device_base_class import DeviceTab
 
-class P7888_Tab(DeviceTab):
+class P7888Tab(DeviceTab):
 	
 	def initialise_workers(self):
 		#Does spelling of the function name matter? (-ize vs -ise?)
@@ -15,13 +15,17 @@ class P7888_Tab(DeviceTab):
 		device = connection_table.find_by_name(self.device_name)
 
 		#pull particular settings needed here.
-		particular_setting = device.properties['particular_setting_identifier']
+		# particular_setting = device.properties['particular_setting_identifier']
+		nDisplay = device.properties['nDisplay']
+		nSystem = device.properties['nSystem']
+		nDevice = device.properties['nDevice']
 
 		#Start the worker process associated with our worker class.
 		#Pass it the particular settings it needs to connect.
 		self.create_worker(
 			'main_worker',
-			'user_devices.P7888.blacs_workers.P7888_Worker'
+			'user_devices.P7888.blacs_worker.P7888_Worker',
+			{'nDisplay' : nDisplay, 'nSystem' : nSystem},
 		)
 
-		pass
+		self.primary_worker = 'main_worker'
