@@ -224,9 +224,9 @@ def set_to_sweep_mode_via_cmd():
 		b"calfact2=0",
 		b"calfact3=0",
 		b"calunit=nsec",
-		b"dac01=06660A00",
-		b"dac23=08000666",
-		b"range=497504",
+		b"dac01=06660948",	#defines threshhold voltage on CH. START & 1
+		b"dac23=075c0666",	#defines threshhold voltage on CH. 2 & (3 & 4)
+		b"range=496000",
 		b"bitshit=0",
 		bytes("datname=" + p7888_data_file, 'ascii'),
 		b"sweepmode=10A0",

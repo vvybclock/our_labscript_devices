@@ -105,11 +105,14 @@ class P7888_Worker(Worker):
 
 		if returnVal == 0:
 			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
-			return False		
+			return False
 
 		#Set the settings on the Device.
-		# p7888.set_to_sweep_mode(self.nDisplay)
 		p7888.set_to_sweep_mode_via_cmd()
+
+		#time out functionality
+		#if the file is too large. delete file, and restart server.
+		#
 
 		#remove old data file so we can run the P7888 without it asking about overwrites.
 		if os.path.exists(p7888.p7888_data_file):
@@ -126,21 +129,10 @@ class P7888_Worker(Worker):
 		# - Useful for saving data.
 		# - Return True on success.
 
-		data = p7888.p7888_dll.ACQDATA()
-		DATA_ARRAY_TYPE = ctypes.c_ulong * self.range;
-		data.s0 = DATA_ARRAY_TYPE()
-
-		p7888.p7888_dll.GetData(ctypes.pointer(data),self.nDisplay)
-
-		with open('E:/P7888/data/pydata.txt','w') as f:
-			f.write('data\n')
-			for i in range(self.range):
-				f.write("{0:b}".format(data.s0[i]))
-				f.write('\n')
+		with open('C:/P7888/lsP7888.lst', 'r') as f:
+			entire_file = f.read()
 
 		self.check_before_halting()
-
-
 		return True
 
 	def shutdown(self):
