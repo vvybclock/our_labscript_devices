@@ -75,44 +75,30 @@ class P7888_Worker(Worker):
 	def init(self):
 		#define variable placeholders for the worker.
 		self.shot_file = None
-		
-		#check to see if the P7888 (64 bit) server is running.
-		settings = p7888.p7888_dll.ACQSETTING()
-		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
-
-		self.range = settings.range
-		if returnVal == 0:
-			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
-			return False
-
-		#DEBUG CODE IS HERE.
-		p7888.set_to_sweep_mode(self.nDisplay)
-		p7888.p7888_dll.NewSetting(self.nDevice)
-		p7888.p7888_dll.SaveSetting()
-
-		
-		
+		self.nDisplay = 0
+	
+		self.check_if_server_running()
+		p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 		return True
 
+
 	def program_manual(self,values):
-		
 		return {}
 
+
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
-		#check to see if the P7888 (64 bit) server is running.
-		settings = p7888.p7888_dll.ACQSETTING()
-		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
+		''' This section is ran before the experiment runs. 
 
-		if returnVal == 0:
-			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
-			return False
+			Current (Gen 1) configuration for photon data acquisition: The photon
+			counting card is set to write to a file continuously. After timeout, or
+			upon reaching a certain filesize, the file is deleted, and the P7888 server is
+			restarted (what does that mean?) and a  new file set up to read. 
 
-		#Set the settings on the Device.
-		p7888.set_to_sweep_mode_via_cmd()
-
-		#time out functionality
-		#if the file is too large. delete file, and restart server.
-		#
+			Testing (Gen 2) configuration for photon data acquisition: 
+			Use a new file every shot.
+		'''
+		self.check_if_server_running()
+		p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 
 		#remove old data file so we can run the P7888 without it asking about overwrites.
 		if os.path.exists(p7888.p7888_data_file):
@@ -124,15 +110,68 @@ class P7888_Worker(Worker):
 		return {}
 
 	def transition_to_manual(self):
+		''' 
+
+		Here we extract data written by the P7888 server. This data file location is
+		defined in set_to_sweep_mode_via_cmd().
+
+		The bulk of this is about extracting and decoding the data. Once, decoded,
+		the data needs to be partitioned into files according to the  sequence that
+		ran it. This file shall then be stored in the hdf file associated with the
+		shot.
+		
+		'''
 		# - Called after shot is finished.
 		# - The device should be placed in manual mode here.
 		# - Useful for saving data.
 		# - Return True on success.
 
-		with open('C:/P7888/lsP7888.lst', 'r') as f:
+		with open(p7888.p7888_data_file, 'rb') as f:
 			entire_file = f.read()
+			# print(repr(entire_file))
 
-		self.check_before_halting()
+			#determine the type of newline used: CRLF, LF, or CR
+			if(b'\r\n' in entire_file):
+				print("Contains CRLF")
+				newline_type = 'CRLF'
+				newline = b'\r\n'
+			elif(b'\r' in entire_file):
+				print("Contains CR")
+				newline_type = 'CR'
+				newline = b'\r'
+			elif(b'\n' in entire_file):
+				print("Contains LF")
+				newline_type = 'LF'
+				newline = b'\n'
+
+			#find the start of the data and split the .lst file
+			data_marker = entire_file.find(b'[DATA]')
+			data_start = data_marker + len(b'[DATA]') + len(newline)
+			header = entire_file[0:data_start]
+			data = entire_file[data_start:]
+
+			#convert data into integer list
+			if len(data) % 4 != 0:
+				print("Error: data_length isn't in 32 bit chunks")
+
+			datalines = []
+			dataints = []
+			for i in range(len(data)//4):
+				datalines.append(data[4*i:4*(i+1)])
+				dataints.append(int.from_bytes(datalines[i], byteorder='little'))
+				print(bin(dataints[i]))
+
+			#seperate the first four bits (data is now in Most Significant Bit First).
+			channels = []
+			quantized_times = []
+			for i in range(len(dataints)):
+				channels.append(       	dataints[i] >> 30              	)
+				quantized_times.append(	(0xffFFffFF >> 2) & dataints[i]	)
+				print("0b{:02b}:{:030b}".format(channels[i],quantized_times[i]))
+
+
+
+		# self.check_before_halting()
 		return True
 
 	def shutdown(self):
@@ -141,17 +180,37 @@ class P7888_Worker(Worker):
 		return True
 
 	def abort_buffered(self):
-		# return True
-		# write_empty("_ab_buff")
+		''' 
+
+		Called upon aborting a running experiment. Must return True on success.
+		
+		'''
 		self.check_before_halting()
 		return True
 
 	def abort_transition_to_buffered(self):
-		# write_empty("_ab_trans_to_buff")
+		'''  
+
+		Called upon aborting transition to buffered. Must return True on success. 
+
+		'''
 		self.check_before_halting()
 		return True
 
+	def check_if_server_running(self):
+		'''Checks to see if the P7888 (64 bit) server is running.'''
+		settings = p7888.p7888_dll.ACQSETTING()
+		returnVal = p7888.p7888_dll.GetSettingData(ctypes.pointer(settings), self.nDisplay)
+		if returnVal == 0:
+			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
+			return False
+
+
 	def check_before_halting(self):
+		''' Checks to see whether or not the P7888 device is running, 
+		i.e., primed for START triggers. If it is, tell it to stop.
+		'''
+
 		status = p7888.p7888_dll.ACQSTATUS()
 		p7888.p7888_dll.GetStatusData(ctypes.pointer(status), self.nDisplay)
 
@@ -161,6 +220,10 @@ class P7888_Worker(Worker):
 			p7888.p7888_dll.Halt(self.nSystem)
 
 	def check_before_starting(self):
+		''' Checks to see whether or not the P7888 device is ready for 
+		START triggers. If it isn't, tell it to start.
+		'''
+
 		status = p7888.p7888_dll.ACQSTATUS()
 		p7888.p7888_dll.GetStatusData(ctypes.pointer(status), self.nDisplay)
 
@@ -168,3 +231,11 @@ class P7888_Worker(Worker):
 
 		if p7888_is_not_started:
 			p7888.p7888_dll.Start(self.nSystem)
+
+
+if __name__ == '__main__':
+	''' Testbench for checking data extraction '''
+	print("In Main:")
+
+	worker = P7888_Worker()
+	worker.transition_to_manual()
