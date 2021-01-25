@@ -72,6 +72,11 @@ def write_empty(fname):
 	with open(r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888' + '\\' + fname + '.txt', 'w') as fp:
 		pass
 
+
+# OPERATION_MODE = 'GEN1'
+OPERATION_MODE = 'GEN2'
+
+
 class P7888_Worker(Worker):
 	def init(self):
 		#define variable placeholders for the worker.
@@ -98,15 +103,19 @@ class P7888_Worker(Worker):
 			Testing (Gen 2) configuration for photon data acquisition: 
 			Use a new file every shot.
 		'''
-		self.check_if_server_running()
-		p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 
-		#remove old data file so we can run the P7888 without it asking about overwrites.
-		if os.path.exists(p7888.p7888_data_file):
-			os.remove(p7888.p7888_data_file)
+		if OPERATION_MODE == 'GEN2':
+			self.check_if_server_running()
+			p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 
-		# - Set the Device to respond to hardware triggers/ run in the experiment.
-		self.check_before_starting()
+			#remove old data file so we can run the P7888 without it asking about overwrites.
+			if os.path.exists(p7888.p7888_data_file):
+				os.remove(p7888.p7888_data_file)
+
+			# - Set the Device to respond to hardware triggers/ run in the experiment.
+			self.check_before_starting()
+		elif OPERATION_MODE == 'GEN1':
+			pass
 
 		return {}
 
@@ -114,13 +123,19 @@ class P7888_Worker(Worker):
 		''' 
 
 		Here we extract data written by the P7888 server. This data file location is
-		defined in set_to_sweep_mode_via_cmd().
+		defined in set_to_sweep_mode_via_cmd(). See 'transition_to_buffered'.
 
-		The bulk of this is about extracting and decoding the data. Once, decoded,
-		the data needs to be partitioned into files according to the  sequence that
-		ran it. This file shall then be stored in the hdf file associated with the
-		shot.
+		The bulk of this is about extracting and decoding the data written by the
+		P7888 onto the harddrive. Once, decoded, the data needs to be partitioned
+		into smaller 'files' according to the  sequence that ran it. This file shall
+		then be stored in the hdf file associated with the shot.
 		
+		Rather than perform this complicated, and lab generational difference here, 
+		we shall simply copy the whole file into the HDF. And write a seperate bit of 
+		analysis code to split the file. 
+
+		This should maintain better code, and make it easier to modify in the future.
+
 		'''
 		# - Called after shot is finished.
 		# - The device should be placed in manual mode here.
