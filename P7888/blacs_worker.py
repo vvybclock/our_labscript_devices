@@ -171,16 +171,27 @@ class P7888_Worker(Worker):
 		channels, quantized_times	= self.decode_data(data=data, verbose=False)
 		header_dict              	= self.decode_header(header, verbose=True)
 
+		#store 'all_arrivals' to HDF file.
 		with h5py.File(self.h5_filepath,'a') as hdf:
 			#create folder for photon counts
 			grp = hdf.create_group("/data/photon_arrivals")
-			lst_file = grp.create_dataset("all_arrivals",data = entire_file)
+			file_array = np.fromfile(p7888.p7888_data_file,dtype='<i4')
+			lst_file = grp.create_dataset("all_arrivals",data=file_array)
 			lst_file.attrs.create("Description", data=
 				'Contains the very large photon arrival file. This file contains the data of arrival times from multiple shots. Not just the one shot we care about here.'
 			)
 
 
-		self.check_before_halting()
+		if OPERATION_MODE == 'GEN2':
+			self.check_before_halting()
+
+		#erase p7888.p7888_data_file if too large.
+		file_size_in_bytes = os.stat(p7888.p7888_data_file).st_size
+		if file_size_in_bytes > FILESIZE_LIMIT_IN_BYTES:
+			self.check_before_halting()
+			if os.path.exists(p7888.p7888_data_file):
+				os.remove(p7888.p7888_data_file)
+
 		return True
 
 	def shutdown(self):
@@ -230,6 +241,8 @@ class P7888_Worker(Worker):
 	def check_before_starting(self):
 		''' Checks to see whether or not the P7888 device is ready for 
 		START triggers. If it isn't, tell it to start.
+
+		Returns whether or not it was running.
 		'''
 
 		status = p7888.p7888_dll.ACQSTATUS()
@@ -239,6 +252,8 @@ class P7888_Worker(Worker):
 
 		if p7888_is_not_started:
 			p7888.p7888_dll.Start(self.nSystem)
+
+		return status.started
 
 	def determine_newline_type(self, entire_file):
 		'''newline_type, newline = determine_newline_type(entire_file)
