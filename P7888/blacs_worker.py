@@ -124,7 +124,14 @@ class P7888_Worker(Worker):
 			# - Set the Device to respond to hardware triggers/ run in the experiment.
 			self.check_before_starting()
 		elif OPERATION_MODE == 'GEN1':
-			pass
+			self.check_if_server_running()
+			p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
+
+			#delete the current file if and only if we're currently running the data taking.
+			was_running = self.check_before_starting()
+			if not was_running and os.path.exists(p7888.p7888_data_file):
+				os.remove(p7888.p7888_data_file)
+			
 
 		return {}
 
