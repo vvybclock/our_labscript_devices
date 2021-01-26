@@ -21,7 +21,7 @@ from blacs.tab_base_classes import Worker
 class TemplateWorker(Worker):
 	def init(self):
 		#Initialization code called once when BLACS is started. Can be used to
-		#initialize the device in question and see if it's turned on, etc.
+		#initialize the device in question and see if it's turned on, etc. and declare variables.
 
 		pass
 
@@ -82,13 +82,20 @@ class P7888_Worker(Worker):
 		#define variable placeholders for the worker.
 		self.shot_file = None
 		self.nDisplay = 0
-	
+		self.h5_filepath = None
+
+		#perform P7888 initilizations
 		self.check_if_server_running()
 		p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 		return True
 
 
 	def program_manual(self,values):
+		''' The P7888 is a read only device. So this function can remain empty for now.
+
+		Possible Future expansion would give options for changing the photon counter
+		settings in BLACS. Which isn't necessary right now.
+		'''
 		return {}
 
 
@@ -103,6 +110,8 @@ class P7888_Worker(Worker):
 			Testing (Gen 2) configuration for photon data acquisition: 
 			Use a new file every shot.
 		'''
+
+		self.h5_filepath = h5_file
 
 		if OPERATION_MODE == 'GEN2':
 			self.check_if_server_running()
@@ -120,7 +129,7 @@ class P7888_Worker(Worker):
 		return {}
 
 	def transition_to_manual(self):
-		''' 
+		''' This section is run at the end of the experiment.
 
 		Here we extract data written by the P7888 server. This data file location is
 		defined in set_to_sweep_mode_via_cmd(). See 'transition_to_buffered'.
@@ -131,20 +140,23 @@ class P7888_Worker(Worker):
 		then be stored in the hdf file associated with the shot.
 		
 		Rather than perform this complicated, and lab generational difference here, 
-		we shall simply copy the whole file into the HDF. And write a seperate bit of 
-		analysis code to split the file. 
-
-		This should maintain better code, and make it easier to modify in the future.
-
+		we shall simply copy the whole file into the HDF. And write a seperate bit
+		of  analysis code to split the file. This should maintain better code, and
+		make it easier to modify in the future.
+		
+		In this function, we'll save a boolean variable:
+		'is_photon_arrivals_processed', the entire photon arrival times file, and
+		the file from the previous run. This should facilitate easier dissection of
+		the data into smaller chunks. 
 		'''
 		# - Called after shot is finished.
 		# - The device should be placed in manual mode here.
 		# - Useful for saving data.
 		# - Return True on success.
 
-		data_file = r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888\sample_data.lst'
-		# with open(p7888.p7888_data_file, 'rb') as f:
-		with open(data_file, 'rb') as f:
+		# data_file = r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888\sample_data.lst'
+		# with open(data_file, 'rb') as f:
+		with open(p7888.p7888_data_file, 'rb') as f:
 			entire_file = f.read()
 
 		newline_type, newline    	= self.determine_newline_type(entire_file)
@@ -152,10 +164,16 @@ class P7888_Worker(Worker):
 		channels, quantized_times	= self.decode_data(data=data, verbose=False)
 		header_dict              	= self.decode_header(header, verbose=True)
 
+		with h5py.File(self.h5_filepath,'a') as hdf:
+			#create folder for photon counts
+			grp = hdf.create_group("/data/photon_arrivals")
+			lst_file = grp.create_dataset("all_arrivals",data = entire_file)
+			lst_file.attrs.create("Description", data=
+				'Contains the very large photon arrival file. This file contains the data of arrival times from multiple shots. Not just the one shot we care about here.'
+			)
 
 
-
-		# self.check_before_halting()
+		self.check_before_halting()
 		return True
 
 	def shutdown(self):
@@ -164,22 +182,21 @@ class P7888_Worker(Worker):
 		return True
 
 	def abort_buffered(self):
-		''' 
-
-		Called upon aborting a running experiment. Must return True on success.
-		
+		''' Called upon aborting a running experiment. Must return True on success.
 		'''
 		self.check_before_halting()
 		return True
 
 	def abort_transition_to_buffered(self):
-		'''  
-
-		Called upon aborting transition to buffered. Must return True on success. 
-
+		'''  Called upon aborting transition to buffered. Must return True on success. 
 		'''
 		self.check_before_halting()
 		return True
+
+#============================================#
+#	Helper Functions ---- Helper Functions   #
+#	****** Helper Functions Below ********   #
+#============================================#
 
 	def check_if_server_running(self):
 		'''Checks to see if the P7888 (64 bit) server is running.'''
