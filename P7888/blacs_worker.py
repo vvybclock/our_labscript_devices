@@ -73,8 +73,8 @@ def write_empty(fname):
 		pass
 
 
-OPERATION_MODE = 'GEN1'
-# OPERATION_MODE = 'GEN2'
+#OPERATION_MODE = 'GEN1'
+OPERATION_MODE = 'GEN2'
 FILESIZE_LIMIT_IN_BYTES = 100000000
 
 class P7888_Worker(Worker):
