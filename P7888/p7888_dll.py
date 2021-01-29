@@ -27,9 +27,11 @@ import ctypes
 if IS_PYTHON_64BIT:
 	print("Attempting 64 bit DLL execution...")
 	dp7888_dll = ctypes.windll.LoadLibrary("C:/Windows/System32/DP7888.DLL")
+	print("Success!")
 else:
 	print("Attempting 32 bit DLL execution...")
 	dp7888_dll = ctypes.windll.LoadLibrary("C:/Windows/SysWOW64/DP7888.DLL")
+	print("Success!")
 #dp7888_dll = ctypes.windll.LoadLibrary("${C:\\Windows\\SysWOW64\\DP7888.DLL}")
 # dp7888_dll = ctypes.windll.LoadLibrary("DP7888.DLL")
 # dp7888_dll = ctypes.windll.dp7888

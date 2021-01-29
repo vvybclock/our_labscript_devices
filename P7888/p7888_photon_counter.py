@@ -8,6 +8,7 @@ import ctypes
 #nDisplay, nSystems, nDevices must be zero. its a backwards compatibility thing for MCDWIN.
 
 p7888_data_file = "C:\\P7888\\lsP7888.lst"
+VERBOSE = False 
 
 def is_started(nDisplay=0):
 	status = p7888_dll.ACQSTATUS()
@@ -238,7 +239,7 @@ def set_to_sweep_mode_via_cmd():
 
 
 if __name__ == '__main__':
-	get_and_print_number_of_cards()
-	get_and_print_settings()
+	if VERBOSE: get_and_print_number_of_cards()
+	if VERBOSE: get_and_print_settings()
 	#set_to_sweep_mode()
 	print("Started? : {}".format(is_started(nDisplay=0)))

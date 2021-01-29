@@ -16,6 +16,9 @@ import h5py
 #Add in labscript_classes for defining the worker process.
 from blacs.tab_base_classes import Worker
 
+#timer
+import time
+
 
 
 class TemplateWorker(Worker):
@@ -76,7 +79,7 @@ def write_empty(fname):
 #OPERATION_MODE = 'GEN1'
 OPERATION_MODE = 'GEN2'
 FILESIZE_LIMIT_IN_BYTES = 100000000
-
+VERBOSE = False
 class P7888_Worker(Worker):
 	def init(self):
 		#define variable placeholders for the worker.
@@ -110,7 +113,7 @@ class P7888_Worker(Worker):
 			Testing (Gen 2) configuration for photon data acquisition: 
 			Use a new file every shot.
 		'''
-
+		self.start_time = time.time()
 		self.h5_filepath = h5_file
 
 		if OPERATION_MODE == 'GEN2':
@@ -132,7 +135,12 @@ class P7888_Worker(Worker):
 			if not was_running and os.path.exists(p7888.p7888_data_file):
 				os.remove(p7888.p7888_data_file)
 			
-
+		self.end_transition_time = time.time()
+		print(f"Time to Start: {self.end_transition_time - self.start_time:.2}")
+		try:
+			print(f"Time since since last run: {self.end_transition_time - self.experiment_end_time:.2}")
+		except:
+			pass
 		return {}
 
 	def transition_to_manual(self):
@@ -168,8 +176,8 @@ class P7888_Worker(Worker):
 
 		newline_type, newline    	= self.determine_newline_type(entire_file)
 		header, data             	= self.split_file_into_header_and_data(entire_file, newline)
-		channels, quantized_times	= self.decode_data(data=data, verbose=False)
-		header_dict              	= self.decode_header(header, verbose=True)
+		channels, quantized_times	= self.decode_data(data=data, verbose=VERBOSE)
+		header_dict              	= self.decode_header(header, verbose=VERBOSE)
 
 		#store 'all_arrivals' to HDF file.
 		with h5py.File(self.h5_filepath,'a') as hdf:
@@ -192,6 +200,7 @@ class P7888_Worker(Worker):
 			if os.path.exists(p7888.p7888_data_file):
 				os.remove(p7888.p7888_data_file)
 
+		self.experiment_end_time = time.time()
 		return True
 
 	def shutdown(self):
@@ -262,15 +271,15 @@ class P7888_Worker(Worker):
 		'CR', 'LF' as well as the newline string.
 		'''
 		if(b'\r\n' in entire_file):
-			print("Contains CRLF")
+			if VERBOSE: print("Contains CRLF") 
 			newline_type = 'CRLF'
 			newline = b'\r\n'
 		elif(b'\r' in entire_file):
-			print("Contains CR")
+			if VERBOSE: print("Contains CR") 
 			newline_type = 'CR'
 			newline = b'\r'
 		elif(b'\n' in entire_file):
-			print("Contains LF")
+			if VERBOSE: print("Contains LF")
 			newline_type = 'LF'
 			newline = b'\n'
 
