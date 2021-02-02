@@ -2,8 +2,9 @@ This is a location that you can put custom labscript device drivers, following
 the same layout as device drivers in the labscript_devices module. To import them,
 import from `user_devices` instead of `labscript_devices`.
 
-If you edit the main labscript devices, you'll find you need to restart labscript for every change in code you make.
-This should make it easier to modify devices while debugging.
+If you edit the main labscript devices, you'll find you need to restart
+labscript for every change in code you make. This should make it easier to
+modify devices while debugging.
 
 In this way, you can work on device support separately from the main labscript devices
 package. However, if you write support for a generally available device, please do
