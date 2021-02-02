@@ -111,7 +111,7 @@ class AnalogTrigger(AnalogOut):
     @set_passed_properties(property_names = {})
     def __init__(self, name, parent_device, connection, voltage, trigger_edge_type='rising',
                  **kwargs):
-        print(f"In AnalogTrigger Init. V={voltage}")
+        
         self.voltage = voltage
         AnalogOut.__init__(self,name,parent_device,connection, **kwargs)
         
@@ -154,11 +154,11 @@ class AnalogTrigger(AnalogOut):
         AnalogOut.add_device(self, device)
 
     def go_high_analog(self,t):
-        print(f"Set V={self.voltage} at t={t}")
+        # print(f"Set V={self.voltage} at t={t}")
         self.constant(t,self.voltage)
         # print("Command Ran.")
     def go_low_analog(self,t):
-        print(f"Set V=0 at t={t}")
+        # print(f"Set V=0 at t={t}")
         self.constant(t,0)
         # print("Command Ran.")
 
@@ -287,7 +287,6 @@ class AnalogIMAQdxCamera(AnalogTriggerableDevice):
             **kwargs: Further keyword arguments to be passed to the `__init__` method of
                 the parent class (TriggerableDevice).
         """
-        print(f"In AnalogCam Init. V = {voltage}")
         self.trigger_edge_type = trigger_edge_type
         self.minimum_recovery_time = minimum_recovery_time
         self.trigger_duration = trigger_duration
