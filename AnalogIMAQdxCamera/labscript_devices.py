@@ -107,15 +107,12 @@ class AnalogTrigger(AnalogOut):
     allowed_states = {1:'high', 0:'low'}
     allowed_children = [AnalogTriggerableDevice]
     voltage = 0
-    def go_high_analog(self,t):
-        self.constant(t,self.voltage)
-    def go_low_analog(self,t):
-        self.constant(t,0)
 
     @set_passed_properties(property_names = {})
     def __init__(self, name, parent_device, connection, voltage, trigger_edge_type='rising',
                  **kwargs):
-
+        print(f"In AnalogTrigger Init. V={voltage}")
+        self.voltage = voltage
         AnalogOut.__init__(self,name,parent_device,connection, **kwargs)
         
         self.trigger_edge_type = trigger_edge_type
@@ -155,6 +152,15 @@ class AnalogTrigger(AnalogOut):
             raise LabscriptError('The \'connection\' string of device %s '%device.name + 
                                  'to %s must be \'trigger\', not \'%s\''%(self.name, repr(device.connection)))
         AnalogOut.add_device(self, device)
+
+    def go_high_analog(self,t):
+        print(f"Set V={self.voltage} at t={t}")
+        self.constant(t,self.voltage)
+        # print("Command Ran.")
+    def go_low_analog(self,t):
+        print(f"Set V=0 at t={t}")
+        self.constant(t,0)
+        # print("Command Ran.")
 
 
 class AnalogIMAQdxCamera(AnalogTriggerableDevice):
@@ -281,10 +287,12 @@ class AnalogIMAQdxCamera(AnalogTriggerableDevice):
             **kwargs: Further keyword arguments to be passed to the `__init__` method of
                 the parent class (TriggerableDevice).
         """
+        print(f"In AnalogCam Init. V = {voltage}")
         self.trigger_edge_type = trigger_edge_type
         self.minimum_recovery_time = minimum_recovery_time
         self.trigger_duration = trigger_duration
         self.orientation = orientation
+        self.voltage = voltage
         if isinstance(serial_number, (str, bytes)):
             serial_number = int(serial_number, 16)
         self.serial_number = serial_number
@@ -309,7 +317,7 @@ class AnalogIMAQdxCamera(AnalogTriggerableDevice):
         self.exposures = []
         ### TriggerableDevice is where the Trigger class is instantiated. 
         ### The Trigger class 
-        AnalogTriggerableDevice.__init__(self, name, parent_device, connection,voltage, **kwargs)
+        AnalogTriggerableDevice.__init__(self, name, parent_device, connection, self.voltage, **kwargs)
 
     def expose(self, t, name, frametype='frame', trigger_duration=None):
         """Request an exposure at the given time. A trigger will be produced by the
