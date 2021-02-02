@@ -14,6 +14,6 @@ from labscript_devices import register_classes
 
 register_classes(
     'AnalogIMAQdxCamera',
-    BLACS_tab='labscript_devices.AnalogIMAQdxCamera.blacs_tabs.IMAQdxCameraTab',
+    BLACS_tab='user_devices.AnalogIMAQdxCamera.blacs_tabs.IMAQdxCameraTab',
     runviewer_parser=None,
 )
