@@ -119,13 +119,39 @@ class P7888_Worker(Worker):
 		if OPERATION_MODE == 'GEN2':
 			self.check_if_server_running()
 			p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
-
-			#remove old data file so we can run the P7888 without it asking about overwrites.
-			if os.path.exists(p7888.p7888_data_file):
-				os.remove(p7888.p7888_data_file)
+			deleted_file = False
+			while not deleted_file:
+				#remove old data file so we can run the P7888 without it asking about overwrites.
+				print("Checking for p7888 file.")
+				if os.path.exists(p7888.p7888_data_file):
+					print("Trying to delete...",)
+					try:
+						os.remove(p7888.p7888_data_file)
+						deleted_file = True
+						print("Deleted")
+					except:
+						print(f"Can't delete... Trying to halt.")
+						self.check_before_halting()
+						pass
+				else:
+					#sometimes the P7888 seems to write the datafile halfway through the the deleting process....
+					#So just double check it's not taking data still.
+					if not self.is_taking_data():
+						deleted_file = True
+				time.sleep(1)
 
 			# - Set the Device to respond to hardware triggers/ run in the experiment.
-			self.check_before_starting()
+			while not self.is_taking_data():
+				print("Attempting to Start...")
+				if not os.path.exists(p7888.p7888_data_file):
+					deleted_file = True
+					self.check_before_starting()
+				else:
+					try:
+						os.remove(p7888.p7888_data_file)
+					except:
+						pass
+				time.sleep(0.5)
 		elif OPERATION_MODE == 'GEN1':
 			self.check_if_server_running()
 			p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
@@ -171,13 +197,24 @@ class P7888_Worker(Worker):
 
 		# data_file = r'C:\Users\Boris\labscript-suite\userlib\user_devices\P7888\sample_data.lst'
 		# with open(data_file, 'rb') as f:
-		with open(p7888.p7888_data_file, 'rb') as f:
-			entire_file = f.read()
 
-		newline_type, newline    	= self.determine_newline_type(entire_file)
-		header, data             	= self.split_file_into_header_and_data(entire_file, newline)
-		channels, quantized_times	= self.decode_data(data=data, verbose=VERBOSE)
-		header_dict              	= self.decode_header(header, verbose=VERBOSE)
+		if OPERATION_MODE == 'GEN2':
+			#wait until no longer running.
+			while self.is_taking_data():
+				print("Waiting for P7888 to stop taking data...")
+				self.check_before_halting()
+				time.sleep(0.5)
+			print("P7888 is not taking data. Can save data.")
+			# time.sleep(4)
+
+		# with open(p7888.p7888_data_file, 'rb') as f:
+		#	entire_file = f.read()
+		#	print(entire_file)
+
+		# newline_type, newline    	= self.determine_newline_type(entire_file)
+		# header, data             	= self.split_file_into_header_and_data(entire_file, newline)
+		# channels, quantized_times	= self.decode_data(data=data, verbose=VERBOSE)
+		# header_dict              	= self.decode_header(header, verbose=VERBOSE)
 
 		#store 'all_arrivals' to HDF file.
 		with h5py.File(self.h5_filepath,'a') as hdf:
@@ -188,10 +225,6 @@ class P7888_Worker(Worker):
 			lst_file.attrs.create("Description", data=
 				'Contains the very large photon arrival file. This file contains the data of arrival times from multiple shots. Not just the one shot we care about here.'
 			)
-
-
-		if OPERATION_MODE == 'GEN2':
-			self.check_before_halting()
 
 		#erase p7888.p7888_data_file if too large.
 		file_size_in_bytes = os.stat(p7888.p7888_data_file).st_size
@@ -233,6 +266,18 @@ class P7888_Worker(Worker):
 			raise RuntimeError("P7888 (x64) Server is not running. Please run it then restart the tab. (Swirly Arrow)")
 			return False
 
+
+	def is_taking_data(self):
+		'''
+			Returns whether or not the P7888 is currently counting photons.
+		'''
+
+		status = p7888.p7888_dll.ACQSTATUS()
+		p7888.p7888_dll.GetStatusData(ctypes.pointer(status), self.nDisplay)
+
+		p7888_is_started = status.started
+
+		return p7888_is_started
 
 	def check_before_halting(self):
 		''' Checks to see whether or not the P7888 device is running, 
