@@ -65,6 +65,27 @@ class P7888_Worker(Worker):
 		self.h5_filepath = h5_file
 
 		if OPERATION_MODE == 'GEN2':
+
+
+			#break out of p7888 code if we're not even going to use the photon counting card this run.
+			is_P7888_used = False
+			try:
+				with h5py.File(self.h5_filepath, 'r') as hdf5_file:
+					grp = hdf5_file['/shot_properties']
+					is_P7888_used = bool(grp.attrs['is_P7888_used'])
+				pass
+			except:
+				#if we failed to access the P7888 attribute, that means the photon
+				#counting card is not being used, so keep `is_P7888_used`=False
+				print("Photon Counting Card is not being used this Sequence. is_P7888_used is not defined or false. Use the ExperimentalCavity() class to run the Cavity Scans if you wish to count photons.")
+				pass
+
+			if is_P7888_used == False:
+				#break out because we don't need to use the P7888.
+				return {}
+
+
+
 			self.check_if_server_running()
 			p7888.set_to_sweep_mode_via_cmd() #Set the settings on the Device.
 			deleted_file = False
@@ -147,6 +168,24 @@ class P7888_Worker(Worker):
 		# with open(data_file, 'rb') as f:
 
 		if OPERATION_MODE == 'GEN2':
+
+			#break out of p7888 code if we didn't even use the photon counting card this run.
+			is_P7888_used = False
+			try:
+				with h5py.File(self.h5_filepath, 'r') as hdf5_file:
+					grp = hdf5_file['/shot_properties']
+					is_P7888_used = bool(grp.attrs['is_P7888_used'])
+				pass
+			except:
+				#if we failed to access the P7888 attribute, that means the photon
+				#counting card is not being used, so keep `is_P7888_used`=False
+				pass
+
+			if is_P7888_used == False:
+				#break out because we don't need to use the P7888.
+				return True
+
+
 			#wait until no longer running.
 			while self.is_taking_data():
 				print("Waiting for P7888 to stop taking data...")
