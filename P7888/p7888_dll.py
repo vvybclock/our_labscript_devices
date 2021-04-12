@@ -1,3 +1,8 @@
+'''
+	This manually defines python wrappers for all the DLL functions exposed by ctypes.
+'''
+
+
 ###########################################################################
 #		Written by Enrique Mendez (eqm@mit.edu)	c. 2020	
 ###########################################################################

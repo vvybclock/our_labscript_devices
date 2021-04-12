@@ -1,3 +1,7 @@
+'''
+	Contains functions that uses the python wrapped p7888_dll.py to get the photon counting card to do moderately complex tasks.
+'''
+
 ###########################################################################
 #		Written by Enrique Mendez (eqm@mit.edu)	c. 2020	
 ###########################################################################

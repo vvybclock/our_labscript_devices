@@ -1,3 +1,7 @@
+'''
+	Holds all the definitions needed by ctypes to communicate with the DLL.
+'''
+
 ###########################################################################
 #		Written by Enrique Mendez (eqm@mit.edu)	c. 2020	
 ###########################################################################
