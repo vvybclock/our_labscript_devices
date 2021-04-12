@@ -1,3 +1,10 @@
+'''
+    
+    Modified by Enrique Mendez. I changed the TriggerDevice from Digital to
+    Analog, otherwise it is similar to the orignal code.
+
+'''
+
 #####################################################################
 #                                                                   #
 # /labscript_devices/IMAQdxCamera/labscript_devices.py              #
