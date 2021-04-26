@@ -16,7 +16,7 @@ import h5py
 #Add in labscript_classes for defining the worker process.
 from blacs.tab_base_classes import Worker
 
-class TemplateWorker(Worker):
+class HP8648_Worker(Worker):
 	def init(self):
 		#Initialization code called once when BLACS is started. Can be used to
 		#initialize the device in question and see if it's turned on, etc. and declare variables.
