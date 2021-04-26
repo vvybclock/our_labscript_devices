@@ -1,0 +1,37 @@
+import h5py
+
+from labscript import Device, set_passed_properties
+
+
+# A "labscript_device" is what one defines in the connection table. It's how
+# labscript knows how to drive the device. Here we are defining an
+# "unbuffered" device. Something that runs on its own CPU time, and  something
+# we just need to send data to every so often. It's interface is not timing
+# critical.
+
+
+
+
+class HP8648(Device):
+	''' A labscript device for sending frequency setpoints. '''
+
+	# Labscript REQUIRED Commands Here
+
+	# This decorator declares that some keyword arguments should be saved to the
+	# connection table, so that BLACS can read them:
+	@set_passed_properties({'connection_table_properties' : ['gpib_address']})
+	def __init__(self, name, gpib_address):
+
+		Device.__init__(self, name=name, parent_device=None,connection=None)
+
+		# The existence of this attribute is how BLACS knows it needs to make a tab for
+		# this device:
+		# STILL, HOW DOES BLACS KNOW WHERE TO FIND THE TAB CLASS????
+		# It uses register_classes.py, which it's defined to scan for.
+		self.BLACS_connection = gpib_address
+
+	#labscript optional? commands here.
+
+	def generate_code(self,hdf5_file):
+		pass
+	
