@@ -12,8 +12,8 @@
 #####################################################################
 from labscript_devices import register_classes
 
-# register_classes(
-#     'AnalogIMAQdxCamera',
-#     BLACS_tab='user_devices.AnalogIMAQdxCamera.blacs_tabs.IMAQdxCameraTab',
-#     runviewer_parser=None,
-# )
+register_classes(
+    'HP8648',
+    BLACS_tab='user_devices.SignalGeneratorHP8648.blacs_tabs.HP8648Tab',
+    runviewer_parser=None,
+)
