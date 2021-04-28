@@ -1,13 +1,18 @@
+'''
+		pyvisa was installed with command 
+			`conda install -c conda-forge pyvisa`
+		This installed `pyvisa-1.11.3` on our system.
+'''
+
 ###########################################################################
 #		Written by Enrique Mendez (eqm@mit.edu)	c. April 2021	
 ###########################################################################
 #To see how this file is accessed by labscript see register_classes.py
 
 #Add in libraries for communicating with the device
-# import user_devices.P7888.p7888_photon_counter as p7888
+import pyvisa
 import numpy as np
-import os
-import ctypes
+
 
 #Add in libraries for working with HDF files
 import labscript_utils.h5_lock
@@ -47,17 +52,28 @@ class HP8648_Worker(Worker):
 		#	- Only useful if the device supports partial programming.
 		# - Return final_values. A dict holding the last values of the sequence. This allows blacs to retain
 		# - output continuity after the shot is finished. 
-		
+		self.h5_filepath = h5_file
+		self.device_name = device_name
 
 		#pull the device addresses from HDF.		
 		devices = self.return_devices(h5_file)
 
+		self.frequency_MHz	= devices[device_name]['frequency_MHz']
+		self.address      	= devices[device_name]['address']
+
+		if np.isnan(self.frequency_MHz):
+			print("No Set Frequency. Doing nothing...")
+		else:
+			print(f"Set Frequency (MHz): {self.frequency_MHz}")
+			print("\tSetting Frequency...")
+			#set frequency
+			self.set_frequency()
+			print("Done!")
+
+
 		final_values = {}
 		return final_values
 
-
-		#for device in device_list:
-		#	print(f"VISA Address is: {device['address']}")
 
 	def transition_to_manual(self):
 		# - Called after shot is finished.
@@ -125,3 +141,19 @@ class HP8648_Worker(Worker):
 			pass
 
 		return devices
+
+	def set_frequency(self):
+		''' Sets frequency using the locally defined variables and with the help of
+		the pyVISA library.  '''
+		rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa64.dll")
+		# rm = pyvisa.ResourceManager()
+		all_addresses = rm.list_resources()
+
+		if self.address in all_addresses:
+			hp8648 = rm.open_resource(self.address)
+			cmd = f"FREQ:CW {self.frequency_MHz} MHZ"
+			print(f"\tGPIB Command: {cmd}")
+
+			return_val = hp8648.write(cmd)
+			print(f"\tReturn Value: {return_val}")
+		pass
