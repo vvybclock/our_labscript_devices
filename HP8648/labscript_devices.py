@@ -1,5 +1,5 @@
 import h5py
-
+import numpy as np
 from labscript import Device, set_passed_properties
 
 
@@ -15,6 +15,8 @@ from labscript import Device, set_passed_properties
 class HP8648(Device):
 	''' A labscript device for sending frequency setpoints. '''
 
+	frequency_MHz = None
+
 	# Labscript REQUIRED Commands Here
 
 	# This decorator declares that some keyword arguments should be saved to the
@@ -22,7 +24,7 @@ class HP8648(Device):
 	@set_passed_properties({'connection_table_properties' : ['gpib_address']})
 	def __init__(self, name, gpib_address):
 
-		Device.__init__(self, name=name, parent_device=None,connection=None)
+		Device.__init__(self, name=name, parent_device=None,connection=gpib_address)
 
 		# The existence of this attribute is how BLACS knows it needs to make a tab for
 		# this device:
@@ -33,5 +35,15 @@ class HP8648(Device):
 	#labscript optional? commands here.
 
 	def generate_code(self,hdf5_file):
+		''' Simply saves the set point for the HP8648 frequency in the HDF.
+		'''
+		grp 	= hdf5_file[f'/devices/{self.name}/']
+		dset	= grp.require_dataset('frequency')
+		dset	= np.array(frequency_MHz)
+		
+
+	def constant(self, frequency_MHz):
+		''' Just save the frequency for compilation later. 
+		'''
+		self.frequency_MHz = frequency_MHz
 		pass
-	
