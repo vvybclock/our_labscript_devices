@@ -21,6 +21,10 @@ class HP8648_Worker(Worker):
 		#Initialization code called once when BLACS is started. Can be used to
 		#initialize the device in question and see if it's turned on, etc. and declare variables.
 
+		#record HDF file
+		self.h5_filepath = None
+		self.devices = {}
+
 		pass
 
 	def shutdown(self):
@@ -44,7 +48,16 @@ class HP8648_Worker(Worker):
 		# - Return final_values. A dict holding the last values of the sequence. This allows blacs to retain
 		# - output continuity after the shot is finished. 
 		
+
+		#pull the device addresses from HDF.		
+		devices = self.return_devices(h5_file)
+
+		final_values = {}
 		return final_values
+
+
+		#for device in device_list:
+		#	print(f"VISA Address is: {device['address']}")
 
 	def transition_to_manual(self):
 		# - Called after shot is finished.
@@ -65,3 +78,40 @@ class HP8648_Worker(Worker):
 		# return True on success
 
 		return True
+
+	def return_devices(self, h5_filepath):
+		'''
+			Returns all HP8648 devices found in the HDF file and defined in the connection table as a dictionary.
+
+			For example,
+
+			```python
+			devices = {
+				
+				{'dev1': 
+					{'address':'blah',
+					 'frequency_MHz':'blah'
+					...}
+				},
+
+				{'dev2':
+					...
+				},
+				...
+			}
+			```
+		'''
+
+		with h5py.File(self.h5_filepath, 'r') as hdf5_file:
+			#pull out the connection table.
+			connection_table = hdf5_file['/connection_table']
+			print(connection_table)
+
+			#pull out HP8648 device names and addresses
+
+
+			#extract device frequencies
+			# grp 	= hdf5_file[f'/devices/{self.name}/']
+			# dset	= grp['frequency']
+			# dset	= np.array(frequency_MHz)
+			
