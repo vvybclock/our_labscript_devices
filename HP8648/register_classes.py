@@ -14,6 +14,6 @@ from labscript_devices import register_classes
 
 register_classes(
     'HP8648',
-    BLACS_tab='user_devices.SignalGeneratorHP8648.blacs_tabs.HP8648Tab',
+    BLACS_tab='user_devices.HP8648.blacs_tabs.HP8648Tab',
     runviewer_parser=None,
 )
