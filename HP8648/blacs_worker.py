@@ -101,17 +101,27 @@ class HP8648_Worker(Worker):
 			}
 			```
 		'''
+		devices = {}
 
 		with h5py.File(self.h5_filepath, 'r') as hdf5_file:
 			#pull out the connection table.
-			connection_table = hdf5_file['/connection_table']
-			print(connection_table)
-
-			#pull out HP8648 device names and addresses
-
-
-			#extract device frequencies
-			# grp 	= hdf5_file[f'/devices/{self.name}/']
-			# dset	= grp['frequency']
-			# dset	= np.array(frequency_MHz)
+			connection_table = hdf5_file['/connection table']
 			
+			#pull out HP8648 device names and addresses
+			for line in connection_table:
+				#check to see if the class is correct.
+				if line[1].decode('ascii') == 'HP8648':
+					device_name	= line[0].decode('ascii')
+					address    	= line[6].decode('ascii')
+
+					#save parameters
+					devices[device_name] = {'address': address}
+			
+			#extract device frequencies
+			for device_name in devices:
+				frequency_dset = hdf5_file[f'/devices/{device_name}/frequency']
+				#store into `devices`
+				devices[device_name]['frequency_MHz'] = frequency_dset[0]
+			pass
+
+		return devices
