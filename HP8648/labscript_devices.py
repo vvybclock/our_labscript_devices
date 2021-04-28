@@ -39,7 +39,11 @@ class HP8648(Device):
 		'''
 		grp 	= hdf5_file.require_group(f'/devices/{self.name}/')
 		dset	= grp.require_dataset('frequency',(1,),dtype='f')
-		dset	= np.array(self.frequency_MHz)
+		
+		if self.frequency_MHz != None:
+			dset[0]	= self.frequency_MHz
+		else:
+			dset[0] = np.nan
 		
 
 	def constant(self, frequency_MHz):
