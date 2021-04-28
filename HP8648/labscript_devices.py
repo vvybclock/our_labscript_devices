@@ -37,9 +37,9 @@ class HP8648(Device):
 	def generate_code(self,hdf5_file):
 		''' Simply saves the set point for the HP8648 frequency in the HDF.
 		'''
-		grp 	= hdf5_file[f'/devices/{self.name}/']
-		dset	= grp.require_dataset('frequency')
-		dset	= np.array(frequency_MHz)
+		grp 	= hdf5_file.require_group(f'/devices/{self.name}/')
+		dset	= grp.require_dataset('frequency',(1,),dtype='f')
+		dset	= np.array(self.frequency_MHz)
 		
 
 	def constant(self, frequency_MHz):
