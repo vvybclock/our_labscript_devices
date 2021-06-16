@@ -133,7 +133,7 @@ class P7888_Worker(Worker):
 		self.end_transition_time = time.time()
 		print(f"Time to Start: {self.end_transition_time - self.start_time:.2}")
 		try:
-			print(f"Time since since last run: {self.end_transition_time - self.experiment_end_time:.2}")
+			print(f"Time since last run: {self.end_transition_time - self.experiment_end_time:.3f}")
 		except:
 			pass
 		return {}
