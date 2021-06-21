@@ -27,3 +27,15 @@ class AnalogInputReaderTab(DeviceTab):
 		)
 
 		self.primary_worker = 'main_worker'
+
+	def initalise_GUI(self):
+
+		pass
+
+	def get_channels(self):
+		#Look up Connection Settings from the Connection Table
+		connection_table = self.settings['connection_table']
+		device = connection_table.find_by_name(self.device_name)
+
+		#pull particular settings needed here.
+		self.channels = device.properties['channels']
