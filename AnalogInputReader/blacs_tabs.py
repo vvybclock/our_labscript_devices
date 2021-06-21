@@ -29,7 +29,9 @@ class AnalogInputReaderTab(DeviceTab):
 		self.primary_worker = 'main_worker'
 
 	def initalise_GUI(self):
+		self.get_channels()
 
+		layout = self.get_tab_layout()
 		pass
 
 	def get_channels(self):
