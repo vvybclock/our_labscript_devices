@@ -3,6 +3,10 @@
 ###########################################################################
 #To see how this file is accessed by labscript see register_classes.py
 
+from qtutils.qt.QtCore import*
+from qtutils.qt.QtGui import *
+from qtutils.qt.QtWidgets import *
+
 from blacs.device_base_class import DeviceTab
 
 class AnalogInputReaderTab(DeviceTab):
@@ -28,11 +32,31 @@ class AnalogInputReaderTab(DeviceTab):
 
 		self.primary_worker = 'main_worker'
 
-	def initalise_GUI(self):
+	def initialise_GUI(self):
 		self.get_channels()
 
 		layout = self.get_tab_layout()
+		channels = self.channels
+		self.label_widgets = {}
+		self.value_widgets = {}
+		for channel in channels:
+			self.label_widgets[channel] = QLabel("test")
+			self.label_widgets[channel].setText(channel)
+			self.label_widgets[channel].setAlignment(Qt.AlignCenter)
+			layout.addWidget(self.label_widgets[channel])
+
+			self.value_widgets[channel] = QLabel("test")
+			self.value_widgets[channel].setAlignment(Qt.AlignRight)
+			layout.addWidget(self.value_widgets[channel])
+
+		# add a timer for updating values
+		self.timer = QTimer()
+		self.timer.timeout.connect(self.update)
+		self.timer.start(1000)
 		pass
+
+	def update(self):
+		self.get_channels()
 
 	def get_channels(self):
 		#Look up Connection Settings from the Connection Table
