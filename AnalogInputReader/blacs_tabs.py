@@ -52,11 +52,28 @@ class AnalogInputReaderTab(DeviceTab):
 		# add a timer for updating values
 		self.timer = QTimer()
 		self.timer.timeout.connect(self.update)
-		self.timer.start(1000)
+		self.timer.start(100)
 		pass
 
+	# @define_state(MODE_MANUAL, queue_state_indefinitely=True, delete_stale_states=True)
 	def update(self):
 		self.get_channels()
+
+		# if self.main_worker.should_run:
+		channels = self.channels
+		for channel in channels:
+			try:
+				value = self.get_value(channels[channel])
+				self.value_widgets[channel].setText(f'{value:.02f} V')
+			except:
+				pass
+
+	def get_value(self, channel_name):
+		import nidaqmx
+		with nidaqmx.Task() as task:
+			task.ai_channels.add_ai_voltage_chan(channel_name)
+			value = task.read()
+		return value
 
 	def get_channels(self):
 		#Look up Connection Settings from the Connection Table
