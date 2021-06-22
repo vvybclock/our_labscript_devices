@@ -11,7 +11,7 @@ from blacs.tab_base_classes import Tab, Worker, define_state
 from blacs.tab_base_classes import MODE_MANUAL, MODE_TRANSITION_TO_BUFFERED, MODE_TRANSITION_TO_MANUAL, MODE_BUFFERED
 from blacs.device_base_class import DeviceTab
 
-FONT = "Arial"
+FONT = "Helvetica"
 FONTSIZE = 24
 class AnalogInputReaderTab(DeviceTab):
 	
@@ -42,19 +42,13 @@ class AnalogInputReaderTab(DeviceTab):
 		layout = self.get_tab_layout()
 		channels = self.channels
 		self.label_widgets = {}
-		# self.value_widgets = {}
 		for channel in channels:
 			self.label_widgets[channel] = QLabel("test")
 			self.label_widgets[channel].setText(f'{channel:20}:{0:5.02f} V')
 			self.label_widgets[channel].setAlignment(Qt.AlignCenter)
 			f = QFont(FONT, FONTSIZE)
 			self.label_widgets[channel].setFont(f)
-			# self.label_widgets[channel].setFixedSize(200,200)
 			layout.addWidget(self.label_widgets[channel])
-
-			# self.value_widgets[channel] = QLabel("test")
-			# self.value_widgets[channel].setAlignment(Qt.AlignRight)
-			# layout.addWidget(self.value_widgets[channel])
 
 		# add a timer for updating values
 		self.timer = QTimer()
@@ -70,9 +64,10 @@ class AnalogInputReaderTab(DeviceTab):
 		for channel in channels:
 			try:
 				value = self.get_value(channels[channel])
-				self.label_widgets[channel].setText(f'{channel:20}:{value:5.02f} V')
-				# self.value_widgets[channel].setText(f'{value:.02f} V')
+				self.label_widgets[channel].setText(f'{channel:<20}:{value:03.03f} V')
 			except:
+				self.label_widgets[channel].setText(f'{channel:<20}: Error')
+
 				pass
 
 	def get_value(self, channel_name):
