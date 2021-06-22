@@ -7,8 +7,12 @@ from qtutils.qt.QtCore import*
 from qtutils.qt.QtGui import *
 from qtutils.qt.QtWidgets import *
 
+from blacs.tab_base_classes import Tab, Worker, define_state
+from blacs.tab_base_classes import MODE_MANUAL, MODE_TRANSITION_TO_BUFFERED, MODE_TRANSITION_TO_MANUAL, MODE_BUFFERED
 from blacs.device_base_class import DeviceTab
 
+FONT = "Arial"
+FONTSIZE = 24
 class AnalogInputReaderTab(DeviceTab):
 	
 	def initialise_workers(self):
@@ -38,16 +42,19 @@ class AnalogInputReaderTab(DeviceTab):
 		layout = self.get_tab_layout()
 		channels = self.channels
 		self.label_widgets = {}
-		self.value_widgets = {}
+		# self.value_widgets = {}
 		for channel in channels:
 			self.label_widgets[channel] = QLabel("test")
-			self.label_widgets[channel].setText(channel)
+			self.label_widgets[channel].setText(f'{channel:20}:{0:5.02f} V')
 			self.label_widgets[channel].setAlignment(Qt.AlignCenter)
+			f = QFont(FONT, FONTSIZE)
+			self.label_widgets[channel].setFont(f)
+			# self.label_widgets[channel].setFixedSize(200,200)
 			layout.addWidget(self.label_widgets[channel])
 
-			self.value_widgets[channel] = QLabel("test")
-			self.value_widgets[channel].setAlignment(Qt.AlignRight)
-			layout.addWidget(self.value_widgets[channel])
+			# self.value_widgets[channel] = QLabel("test")
+			# self.value_widgets[channel].setAlignment(Qt.AlignRight)
+			# layout.addWidget(self.value_widgets[channel])
 
 		# add a timer for updating values
 		self.timer = QTimer()
@@ -55,16 +62,16 @@ class AnalogInputReaderTab(DeviceTab):
 		self.timer.start(100)
 		pass
 
-	# @define_state(MODE_MANUAL, queue_state_indefinitely=True, delete_stale_states=True)
+	@define_state(MODE_MANUAL, queue_state_indefinitely=True, delete_stale_states=True)
 	def update(self):
 		self.get_channels()
 
-		# if self.main_worker.should_run:
 		channels = self.channels
 		for channel in channels:
 			try:
 				value = self.get_value(channels[channel])
-				self.value_widgets[channel].setText(f'{value:.02f} V')
+				self.label_widgets[channel].setText(f'{channel:20}:{value:5.02f} V')
+				# self.value_widgets[channel].setText(f'{value:.02f} V')
 			except:
 				pass
 
