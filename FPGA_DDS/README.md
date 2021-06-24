@@ -1,4 +1,4 @@
-#HP8648 Driver
+#FPGA_DDS Driver
 
 This device is a synthesizer that controls bridging frequencies of various devices in our lab.
 

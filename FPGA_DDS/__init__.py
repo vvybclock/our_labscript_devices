@@ -1,7 +1,7 @@
 '''
 
-	These devices use GPIB to program the frequency. This driver will use PyVISA
-	to program the HP8648 Signal Generators.
+	These devices use UART to program FPGA controlled DDS. This driver will use PyVISA
+	to program the FPGA_DDS Signal Generators.
 	
 	.. include::README.md
 '''

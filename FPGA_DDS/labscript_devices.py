@@ -21,16 +21,16 @@ class FPGA_DDS(Device):
 
 	# This decorator declares that some keyword arguments should be saved to the
 	# connection table, so that BLACS can read them:
-	@set_passed_properties({'connection_table_properties' : ['gpib_address']})
-	def __init__(self, name, gpib_address):
+	@set_passed_properties({'connection_table_properties' : ['usbport']})
+	def __init__(self, name, usbport):
 
-		Device.__init__(self, name=name, parent_device=None,connection=gpib_address)
+		Device.__init__(self, name=name, parent_device=None,connection=usbport)
 
 		# The existence of this attribute is how BLACS knows it needs to make a tab for
 		# this device:
 		# STILL, HOW DOES BLACS KNOW WHERE TO FIND THE TAB CLASS????
 		# It uses register_classes.py, which it's defined to scan for.
-		self.BLACS_connection = gpib_address
+		self.BLACS_connection = usbport
 
 	#labscript optional? commands here.
 

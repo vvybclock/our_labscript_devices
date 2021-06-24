@@ -10,7 +10,7 @@
 #To see how this file is accessed by labscript see register_classes.py
 
 #Add in libraries for communicating with the device
-import pyvisa
+# import pyvisa
 import numpy as np
 
 
@@ -41,6 +41,9 @@ class FPGA_DDS_Worker(Worker):
 		#talk to the device in question whenever a value in the GUI changes to write
 		#those values in the device.
 
+
+		
+		# self.spinbox_widgets[1].setValue(self.spinbox_widgets[0].Value(step*DDS_HEX)+1)
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
@@ -67,7 +70,7 @@ class FPGA_DDS_Worker(Worker):
 			print(f"Set Frequency (MHz): {self.frequency_MHz}")
 			print("\tSetting Frequency...")
 			#set frequency
-			self.set_frequency()
+			# self.set_frequency()
 			print("Done!")
 
 
@@ -142,18 +145,18 @@ class FPGA_DDS_Worker(Worker):
 
 		return devices
 
-	def set_frequency(self):
-		''' Sets frequency using the locally defined variables and with the help of
-		the pyVISA library.  '''
-		rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa64.dll")
-		# rm = pyvisa.ResourceManager()
-		all_addresses = rm.list_resources()
+	# def set_frequency(self):
+	#	''' Sets frequency using the locally defined variables and with the help of
+	#	the pyVISA library.  '''
+	#	rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa64.dll")
+	#	# rm = pyvisa.ResourceManager()
+	#	all_addresses = rm.list_resources()
 
-		if self.address in all_addresses:
-			FPGA_DDS = rm.open_resource(self.address)
-			cmd = f"FREQ:CW {self.frequency_MHz} MHZ"
-			print(f"\tGPIB Command: {cmd}")
+	#	if self.address in all_addresses:
+	#		FPGA_DDS = rm.open_resource(self.address)
+	#		cmd = f"FREQ:CW {self.frequency_MHz} MHZ"
+	#		print(f"\tGPIB Command: {cmd}")
 
-			return_val = FPGA_DDS.write(cmd)
-			print(f"\tReturn Value: {return_val}")
-		pass
+	#		return_val = FPGA_DDS.write(cmd)
+	#		print(f"\tReturn Value: {return_val}")
+	#	pass
