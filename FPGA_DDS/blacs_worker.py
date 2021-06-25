@@ -5,13 +5,14 @@
 '''
 
 ###########################################################################
-#		Written by Enrique Mendez (eqm@mit.edu)	c. April 2021	
+#		Written by Chi Shu (chishu@mit.edu)	c. April 2021	
 ###########################################################################
 #To see how this file is accessed by labscript see register_classes.py
 
 #Add in libraries for communicating with the device
-# import pyvisa
-import numpy as np
+import pyvisa
+# import numpy as np
+# import math
 
 
 #Add in libraries for working with HDF files
@@ -20,6 +21,9 @@ import h5py
 
 #Add in labscript_classes for defining the worker process.
 from blacs.tab_base_classes import Worker
+from pyvisa.constants import StopBits, Parity, ControlFlow
+from time import sleep
+
 
 class FPGA_DDS_Worker(Worker):
 	def init(self):
@@ -28,13 +32,59 @@ class FPGA_DDS_Worker(Worker):
 
 		#record HDF file
 		self.h5_filepath = None
+		self.ClockRate = 480*10**6
+		self.freqbits = 32
+		self.phabits = 14
+		self.ampbits = 10 
 		self.devices = {}
+		self.singlefunction = {"freq": self.SingleFrequencySet,
+								"pha": self.SinglePhaseSet,
+								"amp": self.SingleAmplitudeSet}
+
+		# Read port list
+		rm = pyvisa.ResourceManager()
+		portslist = rm.list_resources_info()
+		portsnamelist = [resourceinfo.alias for resourceinfo in  portslist.values()]
+		# Check if usbport requested in portslist
+		if (self.usbport in portsnamelist):
+			print(self.usbport)
+		else:
+			print(portsnamelist)
+			# hang the tab when device is not connected
+			warn("Device is missing")
+		# open FPGA_DDS device UART
+		self.devices = rm.open_resource('FPGA_DDS9', read_termination = '\n',write_termination = '\n',
+			 send_end = True, baud_rate = 230400, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
+		# read the id number on device
+		print(self.devices.query("?id"))
+		
+		self.FPGAReset()
+		self.ExternalTrigger()
+		self.ReferenceTrigger()
+		# 'ASRL5::INSTR': ResourceInfo(interface_type=<InterfaceType.asrl: 4>, interface_board_number=5, resource_class='INSTR', resource_name='ASRL5::INSTR', alias='FPGA_DDS9')
+		self.singlefunction["freq"](0, 83*10**6) # set channel 0 frequency to 80MHz
+		self.singlefunction["pha"](0, 0) # set channel 0 phase to 0degree
+		self.singlefunction["amp"](0, 0.15) # set channel 0 amplitude to 0.15
+
+		self.singlefunction["freq"](1, 83*10**6) # set channel 0 frequency to 80MHz
+		self.singlefunction["pha"](1, 0) # set channel 0 phase to 0degree
+		self.singlefunction["amp"](1, 0.15) # set channel 0 amplitude to 0.15
+
+
+		self.singlefunction["freq"](2, 83*10**6) # set channel 0 frequency to 80MHz
+		self.singlefunction["pha"](2, 0) # set channel 0 phase to 0degree
+		self.singlefunction["amp"](2, 0.15) # set channel 0 amplitude to 0.15
+
+
+		self.singlefunction["freq"](3, 83*10**6) # set channel 0 frequency to 80MHz
+		self.singlefunction["pha"](3, 0) # set channel 0 phase to 0degree
+		self.singlefunction["amp"](3, 0.15) # set channel 0 amplitude to 0.15
 
 		pass
 
 	def shutdown(self):
 		#Called once when BLACS exits.
-
+		self.devices.close()
 		pass
 
 	def program_manual(self,values):
@@ -145,18 +195,51 @@ class FPGA_DDS_Worker(Worker):
 
 		return devices
 
-	# def set_frequency(self):
-	#	''' Sets frequency using the locally defined variables and with the help of
-	#	the pyVISA library.  '''
-	#	rm = pyvisa.ResourceManager("C:\\Windows\\System32\\visa64.dll")
-	#	# rm = pyvisa.ResourceManager()
-	#	all_addresses = rm.list_resources()
+	def MasterReset(self): # testing!!!!!!!!
+		#Software to FPGA to Master Reset AD9959
+		print(self.devices.query("!AD9959Init"))
 
-	#	if self.address in all_addresses:
-	#		FPGA_DDS = rm.open_resource(self.address)
-	#		cmd = f"FREQ:CW {self.frequency_MHz} MHZ"
-	#		print(f"\tGPIB Command: {cmd}")
+	def FPGAReset(self):
+		# Disarm FPGA
+		self.devices.write("!FPGADDSRESET")
+		sleep(0.003)
 
-	#		return_val = FPGA_DDS.write(cmd)
-	#		print(f"\tReturn Value: {return_val}")
-	#	pass
+	def ExternalTrigger(self):
+		# Set Trigger to External
+		print(self.devices.query("!ExtT"))
+
+	def ReferenceTrigger(self):
+		# set Reference output to Trigger
+		print(self.devices.query("!RefT"))
+
+	def SingleFrequencySet(self, channel, data):
+		# set single channel frequency. This function will reset FPGA DDS control logic and disarm FPGA
+		message = channel<<4 | 0x00
+		data = round(data/self.ClockRate*2**self.freqbits % (2**self.freqbits))
+		print(self.devices.query("!ChSet"))
+		self.devices.write_raw(b''.join(
+			[message.to_bytes(1, byteorder = 'big' ),
+			 data.to_bytes(4, byteorder = 'big' ),
+			  b'\x0a']))
+		print(self.devices.read())
+
+	def SinglePhaseSet(self, channel, data):
+		message = (channel<<4) | 0x01
+		data = round(data/360*2**self.phabits % (2**self.phabits))
+		print(self.devices.query("!ChSet"))
+		self.devices.write_raw(b''.join(
+			[message.to_bytes(1, byteorder = 'big' ),
+			 data.to_bytes(4, byteorder = 'big' ),
+			  b'\x0a']))
+		print(self.devices.read())
+		
+	def SingleAmplitudeSet(self, channel, data):
+		message = channel<<4 | 0x02
+		data = round(data/1*(2**self.ampbits-1) % (2**self.ampbits)) | 1<<12
+		print(self.devices.query("!ChSet"))
+		self.devices.write_raw(b''.join(
+			[message.to_bytes(1, byteorder = 'big' ),
+			 data.to_bytes(4, byteorder = 'big' ),
+			  b'\x0a']))
+		print(self.devices.read())
+		
