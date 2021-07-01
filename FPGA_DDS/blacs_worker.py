@@ -32,9 +32,13 @@ class FPGA_DDS_Worker(Worker):
 
 		#record HDF file
 		self.h5_filepath = None
+		# clock frequency of AD9959
 		self.ClockRate = 480*10**6
+		# number of bits for frequency word
 		self.freqbits = 32
+		# number of bits for phase word
 		self.phabits = 14
+		# 
 		self.ampbits = 10 
 		self.devices = {}
 		self.singlefunction = {"freq": self.SingleFrequencySet,
@@ -53,7 +57,7 @@ class FPGA_DDS_Worker(Worker):
 			# hang the tab when device is not connected
 			warn("Device is missing")
 		# open FPGA_DDS device UART
-		self.devices = rm.open_resource('FPGA_DDS9', read_termination = '\n',write_termination = '\n',
+		self.devices = rm.open_resource(self.usbport, read_termination = '\n',write_termination = '\n',
 			 send_end = True, baud_rate = 230400, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
 		# read the id number on device
 		print(self.devices.query("?id"))
