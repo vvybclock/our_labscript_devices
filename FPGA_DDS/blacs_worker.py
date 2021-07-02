@@ -5,7 +5,7 @@
 '''
 
 ###########################################################################
-#		Written by Chi Shu (chishu@mit.edu)	c. April 2021	
+#		Written by Chi Shu (chishu@mit.edu)	c. July 2021	
 ###########################################################################
 #To see how this file is accessed by labscript see register_classes.py
 
@@ -37,7 +37,7 @@ class FPGA_DDS_Worker(Worker):
 		# number of bits for frequency word
 		self.freqbits = 32
 		# number of bits for phase word
-		self.phabits = 14
+		self.phasbits = 14
 		# 
 		self.ampbits = 10 
 		self.devices = {}
@@ -55,7 +55,7 @@ class FPGA_DDS_Worker(Worker):
 		else:
 			print(portsnamelist)
 			# hang the tab when device is not connected
-			warn("Device is missing")
+			raise ValueError("Device is missing")
 		# open FPGA_DDS device UART
 		self.devices = rm.open_resource(self.usbport, read_termination = '\n',write_termination = '\n',
 			 send_end = True, baud_rate = 230400, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
@@ -229,7 +229,7 @@ class FPGA_DDS_Worker(Worker):
 
 	def SinglePhaseSet(self, channel, data):
 		message = (channel<<4) | 0x01
-		data = round(data/360*2**self.phabits % (2**self.phabits))
+		data = round(data/360*2**self.phasbits % (2**self.phasbits))
 		print(self.devices.query("!ChSet"))
 		self.devices.write_raw(b''.join(
 			[message.to_bytes(1, byteorder = 'big' ),

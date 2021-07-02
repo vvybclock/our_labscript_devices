@@ -64,11 +64,12 @@ class FPGA_DDSTab(DeviceTab):
 		self.spinbox_widgets[0].setValue(step*DDS_HEX)
 		self.spinbox_widgets[1].setValue(DDS_HEX)
 		
-		# self.timer = QTimer()
-		# self.timer.timeout.connect(self.update)
-		# self.timer.start(100)
+		self.timer = QTimer()
+		self.timer.timeout.connect(self.update)
+		self.timer.start(100)
 		pass
-
+		
+	@define_state(MODE_MANUAL)
 	def update(self):
 		step = 480*10**6/2**32
 		DDS_HEX = self.spinbox_widgets[0].value()/480/10**6*2**32//1

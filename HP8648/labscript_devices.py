@@ -31,7 +31,6 @@ class HP8648(Device):
 		# STILL, HOW DOES BLACS KNOW WHERE TO FIND THE TAB CLASS????
 		# It uses register_classes.py, which it's defined to scan for.
 		self.BLACS_connection = gpib_address
-
 	#labscript optional? commands here.
 
 	def generate_code(self,hdf5_file):
