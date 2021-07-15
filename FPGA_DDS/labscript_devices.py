@@ -53,19 +53,26 @@ class FPGA_DDS(Device):
 	#labscript optional? commands here.
 
 	def generate_code(self,hdf5_file):
-		''' Simply saves the set point for the FPGA_DDS frequency in the HDF.
+		''' Parse commands and timings and save the correct sequence into HDF file.
 		'''
 		grp 	= hdf5_file.require_group(f'/devices/{self.name}/')
 		dset	= grp.require_dataset('ts',(1,),dtype='f')
 
 		dset = self.ts
+		# Check if timing is correct. 
 
+
+
+		print("time:")
 		print(self.ts)
+		print("Commands:")
 		print(self.commands)
+		print("Descriptions:")
 		print(self.descriptions)
+		print("Human commands")
 		print(self.commands_human)
 		
-		
+	# def add_instruction(self, time)
 
 	def constant(self, t, channel=0, Func= 'freq', Data = 0, unit = 'None', description = ''):
 		'''  

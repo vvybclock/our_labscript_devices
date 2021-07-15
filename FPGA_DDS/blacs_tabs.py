@@ -69,7 +69,7 @@ class FPGA_DDSTab(DeviceTab):
 		self.timer.start(100)
 		pass
 		
-	@define_state(MODE_MANUAL)
+	@define_state(MODE_MANUAL,queue_state_indefinitely=True, delete_stale_states=True)
 	def update(self):
 		step = 480*10**6/2**32
 		DDS_HEX = self.spinbox_widgets[0].value()/480/10**6*2**32//1

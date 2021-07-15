@@ -66,23 +66,25 @@ class FPGA_DDS_Worker(Worker):
 		self.ExternalTrigger()
 		self.ReferenceTrigger()
 		# 'ASRL5::INSTR': ResourceInfo(interface_type=<InterfaceType.asrl: 4>, interface_board_number=5, resource_class='INSTR', resource_name='ASRL5::INSTR', alias='FPGA_DDS9')
+
+		# Initial value
 		self.singlefunction["freq"](0, 83*10**6) # set channel 0 frequency to 80MHz
 		self.singlefunction["pha"](0, 0) # set channel 0 phase to 0degree
 		self.singlefunction["amp"](0, 0.15) # set channel 0 amplitude to 0.15
 
-		self.singlefunction["freq"](1, 83*10**6) # set channel 0 frequency to 80MHz
-		self.singlefunction["pha"](1, 0) # set channel 0 phase to 0degree
-		self.singlefunction["amp"](1, 0.15) # set channel 0 amplitude to 0.15
+		self.singlefunction["freq"](1, 83*10**6) # set channel 1 frequency to 80MHz
+		self.singlefunction["pha"](1, 0) # set channel 1 phase to 0degree
+		self.singlefunction["amp"](1, 0.15) # set channel 1 amplitude to 0.15
 
 
-		self.singlefunction["freq"](2, 83*10**6) # set channel 0 frequency to 80MHz
-		self.singlefunction["pha"](2, 0) # set channel 0 phase to 0degree
-		self.singlefunction["amp"](2, 0.15) # set channel 0 amplitude to 0.15
+		self.singlefunction["freq"](2, 83*10**6) # set channel 2 frequency to 80MHz
+		self.singlefunction["pha"](2, 0) # set channel 2 phase to 0degree
+		self.singlefunction["amp"](2, 0.15) # set channel 2 amplitude to 0.15
 
 
-		self.singlefunction["freq"](3, 83*10**6) # set channel 0 frequency to 80MHz
-		self.singlefunction["pha"](3, 0) # set channel 0 phase to 0degree
-		self.singlefunction["amp"](3, 0.15) # set channel 0 amplitude to 0.15
+		self.singlefunction["freq"](3, 83*10**6) # set channel 3 frequency to 80MHz
+		self.singlefunction["pha"](3, 0) # set channel 3 phase to 0degree
+		self.singlefunction["amp"](3, 0.15) # set channel 3 amplitude to 0.15
 
 		pass
 
