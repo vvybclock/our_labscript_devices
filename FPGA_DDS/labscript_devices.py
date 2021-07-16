@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-from labscript import Device, set_passed_properties
+from labscript import Device, set_passed_properties, config
 # from math import floor
 
 # A "labscript_device" is what one defines in the connection table. It's how
@@ -33,6 +33,8 @@ class FPGA_DDS(Device):
 		# STILL, HOW DOES BLACS KNOW WHERE TO FIND THE TAB CLASS????
 		# It uses register_classes.py, which it's defined to scan for.
 		self.BLACS_connection = usbport
+		self.t00 = 1*10**(-3)
+		self.t00 = round(self.t00,10)
 		self.ClockRate = 480*10**6 
 		# number of bits for frequency word
 		self.freqbits = 32
@@ -41,9 +43,8 @@ class FPGA_DDS(Device):
 		# 
 		self.amplbits = 10 
 		# commands is a list of channel, function, Data, Unit, RampRate (in unit of us)
-		self.ts = []
-		self.commands = []
-		self.descriptions = []
+		self.instructions = {}
+		self.ramp_limits = []
 		self.commands_human = []
 		# self.constant(0.01, 1, 'freq', 80, 'MHz','initial value')
 		# self.constant(0.2, 1, 'phas', 360, 'Degrees', 'set phase')
@@ -55,24 +56,52 @@ class FPGA_DDS(Device):
 	def generate_code(self,hdf5_file):
 		''' Parse commands and timings and save the correct sequence into HDF file.
 		'''
-		grp 	= hdf5_file.require_group(f'/devices/{self.name}/')
-		dset	= grp.require_dataset('ts',(1,),dtype='f')
-
-		dset = self.ts
-		# Check if timing is correct. 
 
 
+		grp	= hdf5_file.require_group(f'/devices/{self.name}/')
+		
+		# sort in time and create table to save
+		times = sorted(list(self.instructions.keys()))
+		FPGA_table_keys = ['Time', 'Ch', 'Func', 'RampRate', 'Data']
+		dtypes = [(c, np.uint32) for c in FPGA_table_keys]
+		dtypes.append(('Description', 'S50'))
+		# dtypes.append(('Description', object))
+		FPGA_Commands_table = np.empty(len(times), dtype = dtypes)
+		for index in range(len(times)):
+			time = times[index]
+			FPGA_Commands_table[index] = (time*100*10**6, self.instructions[time]['Ch'], 
+						self.instructions[time]['Func'] , self.instructions[time]['RampRate'] ,
+						self.instructions[time]['Data'] , self.instructions[time]['Description'])
 
-		print("time:")
-		print(self.ts)
-		print("Commands:")
-		print(self.commands)
-		print("Descriptions:")
-		print(self.descriptions)
+		# save to HDF file
+		grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
+		
 		print("Human commands")
 		print(self.commands_human)
+		print("Instructions:")
+		print(self.instructions)
+
+	def add_instruction(self, time, instruction = None):
+		# round time to 0.1 ns to revent floating points
+		time = round(time, 10)
+        # Check that time is not negative or too soon after t0:
+		if time < self.t00:
+			err = ' '.join([self.description, self.name, 'has an instruction at t=%ss,'%str(time),
+				'Due to the delay in triggering its pseudoclock device, the earliest output possible is at t=%s.'%str(self.t0)])
+			raise LabscriptError(err)
+        # Check that this doesn't collide with previous instructions:
+		if time in self.instructions.keys():
+			if not config.suppress_all_warnings:
+				message = ' '.join(['WARNING: State of', self.description, self.name, 'at t=%ss'%str(time),
+                          'has already been set to %s.'%self.instruction_to_string(self.instructions[time]),
+                          'Overwriting to %s. (note: all values in base units where relevant)'%self.instruction_to_string(self.apply_calibration(instruction,units) if units and not isinstance(instruction,dict) else instruction)])
+				sys.stderr.write(message+'\n')
 		
-	# def add_instruction(self, time)
+		self.instructions[time] = instruction
+            
+	def triggerSet(self, t00):
+		# set t0 for the trigger
+		self.t00 = round(t00, 10)
 
 	def constant(self, t, channel=0, Func= 'freq', Data = 0, unit = 'None', description = ''):
 		'''  
@@ -92,29 +121,35 @@ class FPGA_DDS(Device):
 			data = round(Data*Units[unit]/360*2**self.phasbits)
 		elif (func == 2):
 			data = round(Data*2**self.amplbits)
-		self.constant_raw(t,channel, func, data, description)
-		self.commands_human.append([t, channel, Func, Data, unit, description])
-		
-
-	def constant_raw(self, t, channel, func, data, description = ''):
-		'''  
-		set constant setting to FPGA_DDS in raw AD9959 format
-
-		'''
-		last_index = len(self.ts)
-		if(last_index == 0):
-			self.addnewcommands(t, channel, func, data, 0, description)	
-		elif(self.ts[last_index-1] < t):
-			self.addnewcommands(t, channel, func, data, 0, description)
-		else:
-			raise ErrorValue("FPGA DDS timing conflicts"+description)
+		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
+								 'Unit':unit, 'Description': description})
+		self.add_instruction(t, {'Ch': channel, 'Func': func, 'RampRate': 0, 'Data': data,'Description': description})
 		
 	def ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description = ''):
+		# ramp rate is in unit of 1us
 		us = 10**-6
+		# Ramprate is an integer
+		ramprate = round(ramprate)
 		Funcs = {'freq':0, 'phas':1, 'ampl':2}
 		Units = {'MHz': 1.0*10**6, 'kHz': 1.0*10**3, 'Hz': 1.0, 'mHz': 0.001,
 		 'Degree': 1, 'Degrees':1, 'Rads': 180/(3.1415926), 'None':1, '1':1}
+		if dt < 0:
+			err = 'Timing conflict FPGA DDS'.join([self.name, 'from t = %ss to %ss'%(str(t),str(endtime))])
+			raise LabscriptError(err)
+		# Round start and stop time to 0.1 ns
+		t = round(t, 10)
+		endtime = round(t+dt, 10)
+		dt = endtime - t
 		NumofStep = round(dt/(us*ramprate))
+		endtime = t + (ramprate*NumofStep)*us
+		dt = endtime-t
+
+		for start, end in self.ramp_limits:
+			if start < t < end or start < endtime < end:
+				err = 'Timing conflict FPGA DDS'.join([self.name, 'from t = %ss to %ss'%(str(t),str(endtime))])
+				raise LabscriptError(err)
+		self.ramp_limits.append(([t, endtime]))
+		# Convert from human value to device value
 		func = Funcs[Func]
 		if(func == 0):
 			data = round(Data*Units[unit1]/self.ClockRate*2**self.freqbits)
@@ -125,25 +160,10 @@ class FPGA_DDS(Device):
 		elif (func ==2):
 			data = round(Data*2**self.amplbits)
 			rampstep = round(rampstep*2**self.amplbits)
-
-		self.ramp_raw(t, channel, func, rampstep, ramprate, description+'_ramp_start')
+		self.add_instruction(t, {'Ch': channel, 'Func': func, 'Data': rampstep, 
+				'RampRate': ramprate, 'Description': description+'_ramp_start'})
+		self.add_instruction(endtime, {'Ch': channel, 'Func': func,  
+				'RampRate': 0, 'Data': data+rampstep*NumofStep, 'Description': description+'_ramp_end'})
 		self.commands_human.append([t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description])
-		self.constant_raw(t+(ramprate*NumofStep+1)*us, channel, func, data+rampstep*NumofStep, description+'_ramp_stop' )
-		# self.commands_human.append([t, channel, Func, ])
-		# self.constant(t+(ramprate*NumofStep+1)*us, channel, Func, Data+rampstep*NumofStep, unit, description+'_ramp_stop' )
-		# return [t+(ramprate*NumofStep+1)*us, Data+rampstep*NumofStep]
+		return dt
 
-	def ramp_raw(self, t, channel, func, rampstep, ramprate, description = ''):
-		last_index = len(self.ts)
-		if(last_index == 0):
-			self.addnewcommands(t, channel, func, rampstep, ramprate, description)
-		elif(self.ts[last_index-1] < t):
-			self.addnewcommands(t, channel, func, rampstep, ramprate, description)
-		else:
-			raise ErrorValue("FPGA DDS timing conflicts"+description)
-
-		
-	def addnewcommands(self, t, channel, func, data, ramprate, description = ''):
-		self.ts.append(t)
-		self.commands.append([channel, func, data, ramprate])
-		self.descriptions.append(description)
