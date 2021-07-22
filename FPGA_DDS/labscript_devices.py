@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-from labscript import Device, set_passed_properties, config
+from labscript import Device, set_passed_properties, config, LabscriptError
 # from math import floor
 
 # A "labscript_device" is what one defines in the connection table. It's how
@@ -76,10 +76,10 @@ class FPGA_DDS(Device):
 		# save to HDF file
 		grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
 		
-		print("Human commands")
-		print(self.commands_human)
-		print("Instructions:")
-		print(self.instructions)
+		# print("Human commands")
+		# print(self.commands_human)
+		# print("Instructions:")
+		# print(self.instructions)
 
 	def add_instruction(self, time, instruction = None):
 		# round time to 0.1 ns to revent floating points
