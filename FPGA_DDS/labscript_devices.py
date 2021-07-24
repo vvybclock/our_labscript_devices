@@ -1,6 +1,6 @@
 import h5py
 import numpy as np
-from labscript import Device, set_passed_properties, config, LabscriptError
+from labscript import TriggerableDevice, set_passed_properties, config, LabscriptError
 # from math import floor
 
 # A "labscript_device" is what one defines in the connection table. It's how
@@ -14,7 +14,7 @@ from labscript import Device, set_passed_properties, config, LabscriptError
 ###########################################################################
 
 
-class FPGA_DDS(Device):
+class FPGA_DDS(TriggerableDevice):
 	''' A labscript device for sending frequency setpoints. '''
 
 	frequency_MHz = None
@@ -24,9 +24,9 @@ class FPGA_DDS(Device):
 	# This decorator declares that some keyword arguments should be saved to the
 	# connection table, so that BLACS can read them:
 	@set_passed_properties({'connection_table_properties' : ['usbport']})
-	def __init__(self, name, usbport):
+	def __init__(self, name, parent_device, usbport, connection):
 
-		Device.__init__(self, name=name, parent_device=None,connection=usbport)
+		TriggerableDevice.__init__(self, name=name, parent_device = parent_device, connection=connection)
 
 		# The existence of this attribute is how BLACS knows it needs to make a tab for
 		# this device:
