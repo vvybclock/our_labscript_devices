@@ -62,20 +62,30 @@ class FPGA_DDS(TriggerableDevice):
 		
 		# sort in time and create table to save
 		times = sorted(list(self.instructions.keys()))
-		FPGA_table_keys = ['Time', 'Ch', 'Func', 'RampRate', 'Data']
-		dtypes = [(c, np.uint32) for c in FPGA_table_keys]
-		dtypes.append(('Description', 'S50'))
-		# dtypes.append(('Description', object))
-		FPGA_Commands_table = np.empty(len(times), dtype = dtypes)
-		for index in range(len(times)):
-			time = times[index]
-			FPGA_Commands_table[index] = (time*100*10**6, self.instructions[time]['Ch'], 
-						self.instructions[time]['Func'] , self.instructions[time]['RampRate'] ,
-						self.instructions[time]['Data'] , self.instructions[time]['Description'])
+		print(times)
+		print(self.t00)
+		if times[0] > (self.t00+1*10**-6):
+			# all elements need to be larger than trigger time by at least 1us
+			times = times
+			FPGA_table_keys = ['Time', 'Ch', 'Func', 'RampRate', 'Data']
+			dtypes = [(c, np.uint32) for c in FPGA_table_keys]
+			dtypes.append(('Description', 'S50'))
+			# dtypes.append(('Description', object))
+			FPGA_Commands_table = np.empty(len(times), dtype = dtypes)
+			for index in range(len(times)):
+				time = times[index]
+				# remove trigger time
+				FPGA_Commands_table[index] = (round(time-self.t00,9)*100*10**6, self.instructions[time]['Ch'], 
+							self.instructions[time]['Func'] , self.instructions[time]['RampRate'] ,
+							self.instructions[time]['Data'] , self.instructions[time]['Description'])
 
-		# save to HDF file
-		grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
-		
+			# save to HDF file
+			grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
+		else:
+			pass
+			err = 'FPGA DDS trigger conflicts'
+			print(err)
+			raise LabscriptError(err) 
 		# print("Human commands")
 		# print(self.commands_human)
 		# print("Instructions:")
@@ -124,7 +134,8 @@ class FPGA_DDS(TriggerableDevice):
 			data = round(Data/360*2**self.phasbits)
 			data = data & 0x00003fff
 		elif (func == 2):
-			Data = Data % 1
+			if (Data!=1):
+				Data = Data%1
 			data = round(Data*2**self.amplbits)
 		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
 								 'Unit':unit, 'Description': description})

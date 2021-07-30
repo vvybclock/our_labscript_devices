@@ -95,6 +95,16 @@ class FPGA_DDSParser(object):
 				if Ch_freqset == 15 and Ch_phaseset ==15 and Ch_ampset == 15:
 					break
 			# check which channel has initial value, which don't Don't plot the lines without initial value
+			for j in range(4):
+				if not (1<<j & Ch_freqset):
+					Ch_freq[j] = [-10**6]
+				if not (1<<j & Ch_phaseset):
+					Ch_phase[j] = [-10**6]
+				if not (1<<j & Ch_ampset):
+					Ch_amp[j] = [-10**6]  
+
+
+			print(Ch_phase)
 			time = [0]
 			for i in range(Numofsteps):
 				time.append(Time[i]/(100*10**6))
@@ -120,20 +130,23 @@ class FPGA_DDSParser(object):
 
 
 			print(time)
-			print(Ch_freq[0])
+			print(Ch_freq)
 			print(Ch_phase)
 			print(Ch_amp)
 
 
 
+			for j in range(4):
+				if (Ch_freq[j][0]>=0):
+					add_trace(f"{self.name}/Ch{j}/freq",(time,Ch_freq[j]), self.name, '')
+				if (Ch_phase[j][0]>=0):
+					add_trace(f"{self.name}/Ch{j}/phase",(time,Ch_phase[j]), self.name, '')
+				if (Ch_amp[j][0]>=0):
+					add_trace(f"{self.name}/Ch{j}/amp", (time, Ch_amp[j]), self.name, '')
 			
-			add_trace(self.name+'/Ch0/freq',(time,Ch_freq[0]), self.name, 'test2')
-			add_trace(self.name+'/Ch1/freq',(time,Ch_freq[1]), self.name, 'test2')
-			add_trace(self.name+'/Ch2/freq',(time,Ch_freq[2]), self.name, 'test2')
-			add_trace(self.name+'/Ch3/freq',(time,Ch_freq[3]), self.name, 'test2')
 		except Exception as e:
 			print(e)
-			# sys.stdout = sys.__stdout__
+			sys.stdout = sys.__stdout__
 		else:
 			pass
 		finally:
