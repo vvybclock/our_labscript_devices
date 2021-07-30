@@ -117,9 +117,14 @@ class FPGA_DDS(TriggerableDevice):
 		func = Funcs[Func]
 		if (func == 0):
 			data = round(Data*Units[unit]/self.ClockRate*2**self.freqbits)
+			data = data & 0xffffffff
 		elif (func == 1):
-			data = round(Data*Units[unit]/360*2**self.phasbits)
+			Data = Data*Units[unit]
+			Data = Data % 360
+			data = round(Data/360*2**self.phasbits)
+			data = data & 0x00003fff
 		elif (func == 2):
+			Data = Data % 1
 			data = round(Data*2**self.amplbits)
 		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
 								 'Unit':unit, 'Description': description})
