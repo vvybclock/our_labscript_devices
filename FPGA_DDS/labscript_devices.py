@@ -146,7 +146,7 @@ class FPGA_DDS(TriggerableDevice):
 		us = 10**-6
 		# Ramprate is an integer
 		ramprate = round(ramprate)
-		Funcs = {'freq':0, 'phas':1, 'ampl':2}
+		Funcs = {'freq': 0, 'frequency':0, 'phas': 1, 'phase':1, 'ampl': 2, 'amplitude':2, 'amp': 2}
 		Units = {'MHz': 1.0*10**6, 'kHz': 1.0*10**3, 'Hz': 1.0, 'mHz': 0.001,
 		 'Degree': 1, 'Degrees':1, 'Rads': 180/(3.1415926), 'None':1, '1':1}
 		if dt < 0:
@@ -176,8 +176,10 @@ class FPGA_DDS(TriggerableDevice):
 		elif (func ==2):
 			data = round(Data*2**self.amplbits)
 			rampstep = round(rampstep*2**self.amplbits)
-		self.add_instruction(t, {'Ch': channel, 'Func': func, 'Data': rampstep, 
-				'RampRate': ramprate, 'Description': description+'_ramp_start'})
+		self.add_instruction(t, {'Ch': channel, 'Func': func, 'Data': data, 
+				'RampRate': 0, 'Description': description+'_ramp_start'})
+		self.add_instruction(t+1*us, {'Ch': channel, 'Func': func, 'Data': rampstep, 
+				'RampRate': ramprate, 'Description': description+'_ramp'})
 		self.add_instruction(endtime, {'Ch': channel, 'Func': func,  
 				'RampRate': 0, 'Data': data+rampstep*NumofStep, 'Description': description+'_ramp_end'})
 		self.commands_human.append([t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description])
