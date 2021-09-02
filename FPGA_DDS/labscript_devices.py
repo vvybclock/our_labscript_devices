@@ -64,28 +64,29 @@ class FPGA_DDS(TriggerableDevice):
 		times = sorted(list(self.instructions.keys()))
 		print(times)
 		print(self.t00)
-		if times[0] > (self.t00+1*10**-6):
-			# all elements need to be larger than trigger time by at least 1us
-			times = times
-			FPGA_table_keys = ['Time', 'Ch', 'Func', 'RampRate', 'Data']
-			dtypes = [(c, np.uint32) for c in FPGA_table_keys]
-			dtypes.append(('Description', 'S50'))
-			# dtypes.append(('Description', object))
-			FPGA_Commands_table = np.empty(len(times), dtype = dtypes)
-			for index in range(len(times)):
-				time = times[index]
-				# remove trigger time
-				FPGA_Commands_table[index] = (round(time-self.t00,9)*100*10**6, self.instructions[time]['Ch'], 
-							self.instructions[time]['Func'] , self.instructions[time]['RampRate'] ,
-							self.instructions[time]['Data'] , self.instructions[time]['Description'])
-
-			# save to HDF file
-			grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
-		else:
-			pass
-			err = 'FPGA DDS trigger conflicts'
-			print(err)
-			raise LabscriptError(err) 
+		if len(times)>0:
+			if times[0] > (self.t00+1*10**-6):
+				# all elements need to be larger than trigger time by at least 1us
+				times = times
+				FPGA_table_keys = ['Time', 'Ch', 'Func', 'RampRate', 'Data']
+				dtypes = [(c, np.uint32) for c in FPGA_table_keys]
+				dtypes.append(('Description', 'S50'))
+				# dtypes.append(('Description', object))
+				FPGA_Commands_table = np.empty(len(times), dtype = dtypes)
+				for index in range(len(times)):
+					time = times[index]
+					# remove trigger time
+					FPGA_Commands_table[index] = (round(time-self.t00,9)*100*10**6, self.instructions[time]['Ch'], 
+								self.instructions[time]['Func'] , self.instructions[time]['RampRate'] ,
+								self.instructions[time]['Data'] , self.instructions[time]['Description'])
+				print(FPGA_Commands_table)
+				# save to HDF file
+				grp.create_dataset('Instructions', data = FPGA_Commands_table, compression = config.compression)	
+			else:
+				pass
+				err = 'FPGA DDS trigger conflicts'
+				# print(err)
+				raise LabscriptError(err) 
 		# print("Human commands")
 		# print(self.commands_human)
 		# print("Instructions:")
@@ -110,6 +111,9 @@ class FPGA_DDS(TriggerableDevice):
 		self.instructions[time] = instruction
             
 	def triggerSet(self, t00):
+		'''
+			set FPGA_DDS trigger time. This is not a hardware setting. Hardware setting is done by changing channels of trigger device.
+		'''
 		# set t0 for the trigger
 		self.t00 = round(t00, 10)
 
@@ -142,6 +146,9 @@ class FPGA_DDS(TriggerableDevice):
 		self.add_instruction(t, {'Ch': channel, 'Func': func, 'RampRate': 0, 'Data': data,'Description': description})
 		
 	def ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description = ''):
+		'''
+			generate ramp of FPGA_DDS, Three commands: set initial, set ramp, and stop ramp by setting end point. 
+		'''
 		# ramp rate is in unit of 1us
 		us = 10**-6
 		# Ramprate is an integer

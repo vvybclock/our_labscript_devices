@@ -60,7 +60,7 @@ class HP8648_Worker(Worker):
 
 		self.frequency_MHz	= devices[device_name]['frequency_MHz']
 		self.address      	= devices[device_name]['address']
-
+		print(self.frequency_MHz)
 		if np.isnan(self.frequency_MHz):
 			print("No Set Frequency. Doing nothing...")
 		else:

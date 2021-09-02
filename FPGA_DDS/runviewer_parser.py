@@ -49,11 +49,11 @@ class FPGA_DDSParser(object):
 			RampRate = instructions["RampRate"]
 			Data = instructions["Data"]
 		try:
-			print(Time)
-			print(Ch)
-			print(Func)
-			print(RampRate)
-			print(Data)
+			# print(Time)
+			# print(Ch)
+			# print(Func)
+			# print(RampRate)
+			# print(Data)
 			# channel settings Ch_freq[0] is the ch0 frequency
 			Ch_freq = {}
 			Ch_phase = {}
@@ -192,7 +192,7 @@ class FPGA_DDSParser(object):
 					add_trace_overwrite(shot, f"{self.name}/Ch{j}/amp", (Ch_time[j], Ch_amp[j]), self.name, '')
 			
 		except Exception as e:
-			print(e)
+			# print(e)
 			sys.stdout = sys.__stdout__
 		else:
 			pass

@@ -85,7 +85,8 @@ class FPGA_DDS_Worker(Worker):
 		self.singlefunction["freq"](3, 83*10**6) # set channel 3 frequency to 80MHz
 		self.singlefunction["pha"](3, 0) # set channel 3 phase to 0degree
 		self.singlefunction["amp"](3, 0.15) # set channel 3 amplitude to 0.15
-
+		print(self.ClockRate)
+		# self.Time = []
 		pass
 
 	def shutdown(self):
@@ -103,6 +104,7 @@ class FPGA_DDS_Worker(Worker):
 		return {}
 
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
+		'''
 		# - Access the shot file for getting hardware instructions encoded in the compilation process.
 		# - Write those instructions to the device.
 		# - If needed, set the device to respond to hw/sw triggers.
@@ -111,27 +113,49 @@ class FPGA_DDS_Worker(Worker):
 		#	- Only useful if the device supports partial programming.
 		# - Return final_values. A dict holding the last values of the sequence. This allows blacs to retain
 		# - output continuity after the shot is finished. 
+		'''
 		self.h5_filepath = h5_file
 		self.device_name = device_name
+		print(self.ClockRate)
+		with h5py.File(self.h5_filepath, 'r') as f:
+			instructions = f['/devices/'+self.device_name+'/Instructions']
+			Time = instructions["Time"]
+			Ch = instructions["Ch"]
+			Func = instructions["Func"]
+			RampRate = instructions["RampRate"]
+			Data = instructions["Data"]
+		# Table read
+		# if self.Time!=Time:
+		#	print("not equal")
+		#	self.Time = Time
+		# else:
+		#	print("equal")
+		
+		print(Time)
+		print(Ch)
+		print(Func)
+		print(RampRate)
+		print(Data)
+		# loading table
+		return {}
+		# #pull the device addresses from HDF.		
+		# devices = self.return_devices(h5_file)
 
-		#pull the device addresses from HDF.		
-		devices = self.return_devices(h5_file)
+		# self.frequency_MHz	= devices[device_name]['frequency_MHz']
+		# self.address      	= devices[device_name]['address']
 
-		self.frequency_MHz	= devices[device_name]['frequency_MHz']
-		self.address      	= devices[device_name]['address']
-
-		if np.isnan(self.frequency_MHz):
-			print("No Set Frequency. Doing nothing...")
-		else:
-			print(f"Set Frequency (MHz): {self.frequency_MHz}")
-			print("\tSetting Frequency...")
-			#set frequency
-			# self.set_frequency()
-			print("Done!")
+		# if np.isnan(self.frequency_MHz):
+		#	print("No Set Frequency. Doing nothing...")
+		# else:
+		#	print(f"Set Frequency (MHz): {self.frequency_MHz}")
+		#	print("\tSetting Frequency...")
+		#	#set frequency
+		#	# self.set_frequency()
+		#	print("Done!")
 
 
-		final_values = {}
-		return final_values
+		# final_values = {}
+		# return final_values
 
 
 	def transition_to_manual(self):
