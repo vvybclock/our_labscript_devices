@@ -23,6 +23,9 @@ import h5py
 from blacs.tab_base_classes import Worker
 from pyvisa.constants import StopBits, Parity, ControlFlow
 from time import sleep
+from datetime import datetime
+import re
+import time
 
 
 class FPGA_DDS_Worker(Worker):
@@ -44,7 +47,12 @@ class FPGA_DDS_Worker(Worker):
 		self.singlefunction = {"freq": self.SingleFrequencySet,
 								"pha": self.SinglePhaseSet,
 								"amp": self.SingleAmplitudeSet}
-
+		self.loadedinstructions = {"Time": [0],
+								   "Ch": [0],
+								   "Func": [0],
+								   "RampRate": [0],
+								   "Data": [0],
+								   "datetime": datetime.now()}
 		# Read port list
 		rm = pyvisa.ResourceManager()
 		portslist = rm.list_resources_info()
@@ -86,6 +94,7 @@ class FPGA_DDS_Worker(Worker):
 		self.singlefunction["pha"](3, 0) # set channel 3 phase to 0degree
 		self.singlefunction["amp"](3, 0.15) # set channel 3 amplitude to 0.15
 		print(self.ClockRate)
+		
 		# self.Time = []
 		pass
 
@@ -116,7 +125,6 @@ class FPGA_DDS_Worker(Worker):
 		'''
 		self.h5_filepath = h5_file
 		self.device_name = device_name
-		print(self.ClockRate)
 		with h5py.File(self.h5_filepath, 'r') as f:
 			instructions = f['/devices/'+self.device_name+'/Instructions']
 			Time = instructions["Time"]
@@ -130,32 +138,47 @@ class FPGA_DDS_Worker(Worker):
 		#	self.Time = Time
 		# else:
 		#	print("equal")
-		
+		print('New sequence FPGA loading start')
 		print(Time)
 		print(Ch)
 		print(Func)
 		print(RampRate)
 		print(Data)
+		# check if loaded data in FPGA is the same as the data try to load
+		# print(all(Time == self.loadedinstructions["Time"]))
 		# loading table
+		start = time.time()
+		if (all (Time == self.loadedinstructions["Time"]) and
+		   all(Ch == self.loadedinstructions["Ch"]) and
+		   all(Func == self.loadedinstructions["Func"]) and
+		   all(RampRate == self.loadedinstructions["RampRate"]) and 
+		   all(Data == self.loadedinstructions["Data"]) and
+		   1):
+			print("same instruction loaded at "+str(self.loadedinstructions["datetime"]))
+		else:
+			# reset FPGA from ARM to data loading
+			self.FPGAReset()
+			# load data into FPGA one by one
+			NumofCommands = len(Time)
+			print("Loading "+ str(NumofCommands)+" Commands:")
+			for i in range(NumofCommands):
+				if (RampRate[i] ==0):
+					self.FPGA_RAM_Load_Single(i, Time[i], Data[i], Func[i], Ch[i], RampRate[i], 0)
+				else:
+					self.FPGA_RAM_Load_Single(i, Time[i], Data[i-1], Func[i], Ch[i], RampRate[i], Data[i])
+				pass
+			self.FPGAHighAddr(NumofCommands-1)
+			self.FPGAReset()
+			self.FPGAArm()
+			self.loadedinstructions = {"Time": Time,
+									   "Ch": Ch,
+									   "Func": Func,
+									   "RampRate": RampRate,
+								       "Data": Data,
+								       "datetime": datetime.now()}
+			print("new instruction loaded at "+str(self.loadedinstructions["datetime"]))
+		print(time.time()-start)
 		return {}
-		# #pull the device addresses from HDF.		
-		# devices = self.return_devices(h5_file)
-
-		# self.frequency_MHz	= devices[device_name]['frequency_MHz']
-		# self.address      	= devices[device_name]['address']
-
-		# if np.isnan(self.frequency_MHz):
-		#	print("No Set Frequency. Doing nothing...")
-		# else:
-		#	print(f"Set Frequency (MHz): {self.frequency_MHz}")
-		#	print("\tSetting Frequency...")
-		#	#set frequency
-		#	# self.set_frequency()
-		#	print("Done!")
-
-
-		# final_values = {}
-		# return final_values
 
 
 	def transition_to_manual(self):
@@ -229,10 +252,62 @@ class FPGA_DDS_Worker(Worker):
 		#Software to FPGA to Master Reset AD9959
 		print(self.devices.query("!AD9959Init"))
 
+	def FPGA_RAM_Load_Single(self, Addr, TData, DData, CData, Ch, RampRate, RampD):
+		'''
+		load a single data point into RAM of FPGA
+		'''
+		assert (Addr <= 100)
+		assert (CData <=2)
+		assert (Ch<=15)
+		assert (RampRate<2**10)
+
+
+		self.devices.write("!SingleRAMW")
+		sleep(0.003)
+		Cdatabyte = int((CData<<6) | (Ch<<2) | RampRate >> 8)
+		message = b''.join([Addr.to_bytes(2, byteorder = 'big'),
+							int(TData).to_bytes(4, byteorder = 'big'),
+							int(DData).to_bytes(4, byteorder = 'big'),
+							Cdatabyte.to_bytes(1, byteorder = 'big'),
+							int(RampRate & 0xFF).to_bytes(1, byteorder = 'big'),
+							b'\x0a'])
+		self.devices.write_raw(message)
+		sleep(0.003)
+		message = b''.join([int(RampD).to_bytes(4, byteorder = 'big'),
+							b'\x0a'])
+		self.devices.write_raw(message)
+		sleep(0.003)
+		pass
+
+
+	def FPGAHighAddr(self, Addr):
+		assert (Addr <= 100)
+		str(Addr).zfill(4)
+		self.devices.write("!RAMHighAddrW")
+		sleep(0.003)
+		print(str(Addr).zfill(4).encode())
+		self.devices.write_raw(b''.join(
+			[str(Addr).zfill(4).encode(),
+			b'\x0a']))
+		reply = self.devices.read()
+		print(reply)
+
+	def FPGAArm(self):
+		'''
+		Arm FPGA waiting for trigger
+		'''
+		print(self.devices.query("!FPGAARM"))
+
+		sleep(0.003)
+
 	def FPGAReset(self):
+		'''
+		Disarm FPGA, RAM table is accessiable
+		'''
 		# Disarm FPGA
 		self.devices.write("!FPGADDSRESET")
 		sleep(0.003)
+
 
 	def ExternalTrigger(self):
 		# Set Trigger to External

@@ -64,9 +64,9 @@ class FPGA_DDSTab(DeviceTab):
 		self.spinbox_widgets[0].setValue(step*DDS_HEX)
 		self.spinbox_widgets[1].setValue(DDS_HEX)
 		
-		self.timer = QTimer()
-		self.timer.timeout.connect(self.update)
-		self.timer.start(100)
+		# self.timer = QTimer()
+		# self.timer.timeout.connect(self.update)
+		# self.timer.start(100)
 		pass
 		
 	@define_state(MODE_MANUAL,queue_state_indefinitely=True, delete_stale_states=True)
