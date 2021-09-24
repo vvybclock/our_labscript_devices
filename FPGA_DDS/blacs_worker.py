@@ -25,6 +25,7 @@ from pyvisa.constants import StopBits, Parity, ControlFlow
 from time import sleep
 from datetime import datetime
 import re
+import time
 
 
 class FPGA_DDS_Worker(Worker):
@@ -146,6 +147,7 @@ class FPGA_DDS_Worker(Worker):
 		# check if loaded data in FPGA is the same as the data try to load
 		# print(all(Time == self.loadedinstructions["Time"]))
 		# loading table
+		start = time.time()
 		if (all (Time == self.loadedinstructions["Time"]) and
 		   all(Ch == self.loadedinstructions["Ch"]) and
 		   all(Func == self.loadedinstructions["Func"]) and
@@ -175,7 +177,7 @@ class FPGA_DDS_Worker(Worker):
 								       "Data": Data,
 								       "datetime": datetime.now()}
 			print("new instruction loaded at "+str(self.loadedinstructions["datetime"]))
-
+		print(time.time()-start)
 		return {}
 
 
