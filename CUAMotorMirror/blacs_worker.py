@@ -29,31 +29,47 @@ from user_devices.CUAMotorMirror.scservo_sdk import *
 
 class CUAMotorMirror_Worker(Worker):
 	def init(self):
-
 		# Read port list
+		self.connected = False
 		rm = pyvisa.ResourceManager()
 		portslist = rm.list_resources_info()
 		portsnamelist = [resourceinfo.alias for resourceinfo in  portslist.values()]
 		# Check if usbport requested in portslist
-		if (self.usbport in portsnamelist):
-			print(self.usbport)
-		else:
-			print(portslist)
-			# hang the tab when device is not connected
-			raise ValueError("Device is missing")
-		# open port URT-1
-		# self.devices = PortHandler('COM4')
-		# if self.devices.setBaudRate(self.baud_rate):
-		#	print("Succeeded to change the baudrate")
+		# if (self.usbport in portsnamelist):
+		#	print(self.usbport)
 		# else:
-		#	print("Error!!!")
+		#	print(portslist)
+		#	# hang the tab when device is not connected
+		#	raise ValueError("Device is missing")
+		# # open port URT-1
+		# # self.devices = PortHandler('COM4')
+		# # if self.devices.setBaudRate(self.baud_rate):
+		# #	print("Succeeded to change the baudrate")
+		# # else:
+		# #	print("Error!!!")
 
 
-		self.devices = rm.open_resource(self.usbport, read_termination = '\n',write_termination = '\n',
-			 send_end = True, baud_rate = self.baud_rate, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
+		# self.devices = rm.open_resource(self.usbport, read_termination = '\n',write_termination = '\n',
+		#	 send_end = True, baud_rate = self.baud_rate, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
 		# read the id number on device
 		# print(self.devices.query())
 		pass
+
+	def port_lists(self):
+		if not self.connected:
+			rm = pyvisa.ResourceManager()
+			portslist = rm.list_resources_info()
+			return portslist
+		else:
+			return []
+
+	def open_port(self, portname):
+		'''
+		open com ports
+		'''
+		print(portname)
+		return []
+		
 
 	def shutdown(self):
 		#Called once when BLACS exits.
@@ -106,9 +122,5 @@ class CUAMotorMirror_Worker(Worker):
 	def return_devices(self, h5_filepath):
 		devices = {}
 		return devices
-
-	def MasterReset(self): # testing!!!!!!!!
-		#Software to FPGA to Master Reset AD9959
-		print('test')
 
 		
