@@ -1,7 +1,5 @@
 '''
-		pyvisa was installed with command 
-			`conda install -c conda-forge pyvisa`
-		This installed `pyvisa-1.11.3` on our system.
+use serial command instead of pyvisa
 '''
 
 ###########################################################################
@@ -10,7 +8,8 @@
 #To see how this file is accessed by labscript see register_classes.py
 
 #Add in libraries for communicating with the device
-import pyvisa
+# import pyvisa
+# from pyvisa.constants import StopBits, Parity, ControlFlow
 
 
 #Add in libraries for working with HDF files
@@ -19,61 +18,88 @@ import pyvisa
 
 #Add in labscript_classes for defining the worker process.
 from blacs.tab_base_classes import Worker
-from pyvisa.constants import StopBits, Parity, ControlFlow
 from time import sleep
 from datetime import datetime
 import re
 import time
+import os
+import serial.tools.list_ports
 from user_devices.CUAMotorMirror.scservo_sdk import *
+from user_devices.CUAMotorMirror.CUAMotors import *
 
+DeviceFilepath = os.path.dirname(os.path.realpath(__file__))
 
 class CUAMotorMirror_Worker(Worker):
 	def init(self):
 		# Read port list
 		self.connected = False
-		rm = pyvisa.ResourceManager()
-		portslist = rm.list_resources_info()
-		portsnamelist = [resourceinfo.alias for resourceinfo in  portslist.values()]
-		# Check if usbport requested in portslist
-		# if (self.usbport in portsnamelist):
-		#	print(self.usbport)
-		# else:
-		#	print(portslist)
-		#	# hang the tab when device is not connected
-		#	raise ValueError("Device is missing")
-		# # open port URT-1
-		# # self.devices = PortHandler('COM4')
-		# # if self.devices.setBaudRate(self.baud_rate):
-		# #	print("Succeeded to change the baudrate")
-		# # else:
-		# #	print("Error!!!")
+		self.portname = None
+		self.device = None
+		self._baud = 500000
+		self._protocol_end = 0
+		self._baud = self.baud_rate
 
+		self.IDs = []
+		self.motors = []
+		# self.open_port(self.usbport)
+		# self.search_motors()
+		# print(self.IDs)
 
-		# self.devices = rm.open_resource(self.usbport, read_termination = '\n',write_termination = '\n',
-		#	 send_end = True, baud_rate = self.baud_rate, data_bits = 8, flow_control = ControlFlow.none, parity = Parity.none, stop_bits = StopBits.one, timeout = 25)
-		# read the id number on device
-		# print(self.devices.query())
-		pass
-
-	def port_lists(self):
-		if not self.connected:
-			rm = pyvisa.ResourceManager()
-			portslist = rm.list_resources_info()
-			return portslist
-		else:
-			return []
 
 	def open_port(self, portname):
 		'''
 		open com ports
+		ask user to select a port from pop dialog or use preselected value
 		'''
-		print(portname)
-		return []
+		assert (self.connected == False)
+		# read all com port
+		ports = serial.tools.list_ports.comports()
+		portnamelist = [port for port, desc, hwid in sorted(ports)]
+		print(portnamelist)
+		# open port
+		if portname in portnamelist:
+			self.portname = portname
+			portHandler = PortHandler(self.portname)
+			packetHandler = PacketHandler(self._protocol_end)
+			if portHandler.setBaudRate(self._baud): # this command open port
+				print("Succeeded to set baud and open_port")
+				self.device = portHandler
+				self.packetHandler = packetHandler
+				self.connected = True
+				return True
+			else:
+				print("Failed to change baud or open_port")
+				raise "Failed to open Motor port" 
+				quit()
+				return False
+		else: 
+			return False
+
+	def search_motors(self):
+		print("search Motors")
+		assert (self.connected == True)
+		IDs = []
+		motors = []
+		for searchID in range(1, 50):
+			print(searchID)
+			scs_model_number, scs_comm_result, scs_error = self.packetHandler.ping(self.device, searchID)
+			if (scs_comm_result == COMM_SUCCESS) and (scs_error==0):
+				IDs.append(searchID)
+				
+
+		self.IDs = IDs		
+		return IDs
+
+	def MotorIDs(self):
+		return self.IDs
 		
+	def close_port(self):
+		self.device.closePort()
+		return True
 
 	def shutdown(self):
 		#Called once when BLACS exits.
-		self.devices.close()
+		self.close_port()
 		pass
 
 	def program_manual(self,values):

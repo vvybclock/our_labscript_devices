@@ -13,6 +13,7 @@ from blacs.tab_base_classes import Tab, Worker, define_state
 from blacs.tab_base_classes import MODE_MANUAL, MODE_TRANSITION_TO_BUFFERED, MODE_TRANSITION_TO_MANUAL, MODE_BUFFERED
 from blacs.device_base_class import DeviceTab
 import os
+import serial.tools.list_ports
 
 FONT = "Helvetica"
 FONTSIZE = 24
@@ -31,7 +32,9 @@ class CUAMotorMirrorTab(DeviceTab):
 		# particular_setting = device.properties['particular_setting_identifier']
 		usbport = device.properties['usbport']
 		baud_rate = device.properties['baud_rate']
-
+		self.usbport = usbport
+		self._baud = baud_rate
+		self.connected = False
 
 		#Start the worker process associated with our worker class.
 		#Pass it the particular settings it needs to connect.
@@ -78,7 +81,11 @@ class CUAMotorMirrorTab(DeviceTab):
 		# self.port_list_dropdown.
 		self.text_lists = self.subWidget.Text_lists
 		self.open_port_button = self.subWidget.Open_port_button
-		self.open_port_button.pressed.connect(self.open_port)
+		self.open_port_button.pressed.connect(self.usbports_control)
+		self.search_button = self.subWidget.search_button
+		self.search_button.pressed.connect(self.search_motors)
+		self.open_port()
+
 
 		# self.text_lists.append('test')
 		
@@ -88,74 +95,70 @@ class CUAMotorMirrorTab(DeviceTab):
 
 		# results = self.queue_work(self.primary_worker, 'open_port', 1)
 		# print(results)
+	
+	def usbports_control(self):
+		if self.open_port_button.text == 'Open Port':
+			self.open_port()
+		else:
+			self.close_port()
+
+	@define_state(MODE_MANUAL, queue_state_indefinitely = True)
+	def close_port(self):
+		'''
+		close com port
+		Not yet implemented
+		'''
+		self.open_port_button.setEnabled(False)
+		results = yield(self.queue_work(self.primary_worker, 'close_port'))
+		if results:
+			self.connected = False
+			
+		pass
+
+
 	@define_state(MODE_MANUAL, queue_state_indefinitely = True)
 	def open_port(self):
-		self.text_lists.append('read all ports')
-		PopDialog = UiLoader().load(os.path.join(DeviceFilepath, 'SelectPorts.ui'))
-		port_lists = yield(self.queue_work(self.primary_worker,'port_lists'))
-		if port_lists:
-			portsnamelist = [resourceinfo.alias for resourceinfo in  port_lists.values()]
+		assert(self.connected == False)
+		self.open_port_button.setEnabled(False)
+		# read port list
+		ports = serial.tools.list_ports.comports()
+		portnamelist = [port for port, desc, hwid in sorted(ports)]
+		portname = self.usbport
+		if (portname in portnamelist) and (portname!=None):
+			self.portname = portname
+		else:
+			# open pop dialog as user to select port
+			PopDialog = UiLoader().load(os.path.join(DeviceFilepath, 'SelectPorts.ui'))
+			self.PopDialog = PopDialog
 			PopDialog.comboBox.clear()
-			PopDialog.comboBox.addItems(portsnamelist)
+			PopDialog.comboBox.addItems(portnamelist)
 			PopDialog.show()
 			returns = PopDialog.exec_()
 			if returns == PopDialog.Accepted:
-				portname = PopDialog.comboBox.currentText() 
-				self.text_lists.append('open: '+portname)
-
-				# open port
-				results = yield(self.queue_work(self.primary_worker,'open_port', portname))
-				self.open_port_button.setText('Close Port')
+				self.portname = PopDialog.comboBox.currentText() 
 			else:
-				# cancel
-				self.text_lists.append('Cancel!!!')
-			# open port
-			# wait for return 
+				self.portname = None
+		if self.portname != None:
+			results = yield(self.queue_work(self.primary_worker, 'open_port', self.portname))
+			if results:
+				self.connected = True
+				self.text_lists.append('True')
+				self.open_port_button.setText("Close Port")
+				self.open_port_button.setEnabled(True)
+				pass
 		else:
-			# pop message port already open
 			pass
-			# self.label.setText(self.dialog.comboBox.currentText())
+			#port open cancelled
+	
 
 
-	# @define_state(MODE_MANUAL, False)
-	# def text_test(self,text = ''):
-	#	self.text_lists.append('test:'+text)
-	#	result = yield(self.queue_work(self.primary_worker,'open_port', 1))
-	#	self.text_lists.append('val:'+ str(result))
-	#	port_list = self.port_lists()
-	#	self.text_lists.append('ports:'+ str(port_list))
+	@define_state(MODE_MANUAL, queue_state_indefinitely = True)
+	def search_motors(self):
+		results = yield(self.queue_work(self.primary_worker, 'search_motors'))
+		if results:
+			self.text_lists.append(str(results))
 
-	# @define_state(MODE_MANUAL, False)
-	# def port_lists(self):
-	#	results = yield(self.queue_work(self.primary_worker, 'port_lists'))
-	#	if results:
-	#		self.text_lists.append('test'+'true')
-	#		self.text_lists.append('test'+str(type(results)))
-	#		self.text_lists.append('test'+str(len(results)))
-	#		self.text_lists.append('test'+str(results))
-	#	else:
-	#		# nop
-	#		pass
-	#	return results
-	 	
-	 	
-	# @define_state(MODE_MANUAL,queue_state_indefinitely=True, delete_stale_states=True)
-	# def update(self):
-	#	step = 480*10**6/2**32
-	#	DDS_HEX = self.spinbox_widgets[0].value()/480/10**6*2**32//1
-	#	# self.spinbox_widgets[0].setValue(step*DDS_HEX)
-	#	self.spinbox_widgets[1].setValue(DDS_HEX)
-	#	pass
-
-
-	# def get_channels(self):
-	#	#Look up Connection Settings from the Connection Table
-	#	connection_table = self.settings['connection_table']
-	#	device = connection_table.find_by_name(self.device_name)
-
-	#	#pull particular settings needed here.
-	#	self.channels = device.properties['channels']
-
+	
 
 
 class NoStealFocusDoubleSpinBox(QDoubleSpinBox):
