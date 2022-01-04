@@ -140,7 +140,7 @@ class FPGA_DDS(TriggerableDevice):
 		elif (func == 2):
 			if (Data!=1):
 				Data = Data%1
-			data = round(Data*2**self.amplbits)
+			data = round(Data*(2**self.amplbits-1))
 		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
 								 'Unit':unit, 'Description': description})
 		self.add_instruction(t, {'Ch': channel, 'Func': func, 'RampRate': 0, 'Data': data,'Description': description})
@@ -181,8 +181,8 @@ class FPGA_DDS(TriggerableDevice):
 			data = round(Data*Units[unit1]/360*2**self.phasbits)
 			rampstep = round(rampstep*Units[unit2]/360*2**self.phasbits)
 		elif (func ==2):
-			data = round(Data*2**self.amplbits)
-			rampstep = round(rampstep*2**self.amplbits)
+			data = round(Data*(2**self.amplbits-1))
+			rampstep = round(rampstep*(2**self.amplbits-1))
 		self.add_instruction(t, {'Ch': channel, 'Func': func, 'Data': data, 
 				'RampRate': 0, 'Description': description+'_ramp_start'})
 		self.add_instruction(t+1*us, {'Ch': channel, 'Func': func, 'Data': rampstep, 
