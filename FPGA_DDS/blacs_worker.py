@@ -112,6 +112,8 @@ class FPGA_DDS_Worker(Worker):
 		# self.spinbox_widgets[1].setValue(self.spinbox_widgets[0].Value(step*DDS_HEX)+1)
 		return {}
 
+	
+
 	def transition_to_buffered(self, device_name, h5_file, initial_values, fresh):
 		'''
 		# - Access the shot file for getting hardware instructions encoded in the compilation process.
@@ -123,6 +125,17 @@ class FPGA_DDS_Worker(Worker):
 		# - Return final_values. A dict holding the last values of the sequence. This allows blacs to retain
 		# - output continuity after the shot is finished. 
 		'''
+		def check_same_sequence(x,y):
+			'''
+			check if selected entries of sequence are the same
+			'''
+			if len(x)!=len(y):
+				return False
+			elif(all (x==y)):
+				return True
+			else: 
+				return False
+			
 		self.h5_filepath = h5_file
 		self.device_name = device_name
 		with h5py.File(self.h5_filepath, 'r') as f:
@@ -140,6 +153,7 @@ class FPGA_DDS_Worker(Worker):
 		#	print("equal")
 		print('New sequence FPGA loading start')
 		print(Time)
+		print(self.loadedinstructions["Time"])
 		print(Ch)
 		print(Func)
 		print(RampRate)
@@ -148,12 +162,13 @@ class FPGA_DDS_Worker(Worker):
 		# print(all(Time == self.loadedinstructions["Time"]))
 		# loading table
 		start = time.time()
-		if (all (Time == self.loadedinstructions["Time"]) and
-		   all(Ch == self.loadedinstructions["Ch"]) and
-		   all(Func == self.loadedinstructions["Func"]) and
-		   all(RampRate == self.loadedinstructions["RampRate"]) and 
-		   all(Data == self.loadedinstructions["Data"]) and
-		   1):
+		li = self.loadedinstructions
+		if (check_same_sequence(Time,li["Time"]) and
+			check_same_sequence(Ch,li["Ch"]) and 
+			check_same_sequence(Func,li["Func"]) and 
+			check_same_sequence(RampRate,li["RampRate"]) and 
+			check_same_sequence(Data,li["Data"]) and 
+			1):
 			print("same instruction loaded at "+str(self.loadedinstructions["datetime"]))
 		else:
 			# reset FPGA from ARM to data loading
