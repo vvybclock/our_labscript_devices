@@ -202,3 +202,13 @@ class FPGA_DDS(TriggerableDevice):
 		self.commands_human.append([t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description])
 		return dt
 
+	def ramp1(self, t, duration, channel = int(0b0001), Func='freq', Data=0, unit1 = 'MHz', rampstep=5, unit2='Hz',ramprate=5, description = ''):
+		'''
+			# To Do
+				[] = make ramp1 function human-readable. I.e., idelly we'd like to set initial and final ramp values and ramp time.
+		'''
+		self.ramp(t, duration, channel=channel, 
+			Func = Func, Data = Data, unit1 = unit1, 
+			rampstep = rampstep, unit2=unit2, 
+			ramprate = ramprate, description = description
+			)
