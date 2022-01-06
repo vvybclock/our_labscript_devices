@@ -117,7 +117,7 @@ class FPGA_DDS(TriggerableDevice):
 		# set t0 for the trigger
 		self.t00 = round(t00, 10)
 
-	def constant(self, t, channel=0, Func= 'freq', Data = 0, unit = 'None', description = ''):
+	def constant(self, t, channel=int(0b0001), Func= 'freq', Data = 0, unit = 'None', description = ''):
 		'''  
 		set frequency to constant for FPGA_DDS at time t, with channel and Function
 		channel is defined as 4 bit, b'0001' means channel 0, b'0011' means both channel 0 and 1 ...
@@ -147,8 +147,18 @@ class FPGA_DDS(TriggerableDevice):
 		
 	def ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description = ''):
 		'''
-			generate ramp of FPGA_DDS, Three commands: set initial, set ramp, and stop ramp by setting end point. 
+			ramp
+				-t       	: intial time
+				-dt      	: duration
+				-channel 	: bitstring representing which channel(s) is activated
+				-Func    	: parameter changed. {'freq': 0, 'frequency':0, 'phas': 1, 'phase':1, 'ampl': 2, 'amplitude':2, 'amp': 2}
+				-Data    	: initial value of the ramped parameter.
+				-unit1   	: initial value units.
+				-rampstep	: stepsize of ramped parameter per step.
+				-unit2   	: rampstep units.
+				-ramprate	: single step duration in us. It is NOT a rate
 		'''
+		# generate ramp of FPGA_DDS, Three commands: set initial, set ramp, and stop ramp by setting end point. 
 		# ramp rate is in unit of 1us
 		us = 10**-6
 		# Ramprate is an integer
