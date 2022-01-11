@@ -117,7 +117,7 @@ class FPGA_DDS(TriggerableDevice):
 		# set t0 for the trigger
 		self.t00 = round(t00, 10)
 
-	def constant(self, t, channel=int(0b0001), Func= 'freq', Data = 0, unit = 'None', description = ''):
+	def _constant(self, t, channel=int(0b0001), Func= 'freq', Data = 0, unit = 'None', description = ''):
 		'''  
 		set frequency to constant for FPGA_DDS at time t, with channel and Function
 		channel is defined as 4 bit, b'0001' means channel 0, b'0011' means both channel 0 and 1 ...
@@ -144,20 +144,26 @@ class FPGA_DDS(TriggerableDevice):
 		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
 								 'Unit':unit, 'Description': description})
 		self.add_instruction(t, {'Ch': channel, 'Func': func, 'RampRate': 0, 'Data': data,'Description': description})
-		
-	def ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description = ''):
+	def constant(self,t,channel,value, description):
+		'''
+		wrapper for _constant. value is a tuple e.g. ('phase',2,'1'). See _constant for more.
+		'''
+		self._constant(t=t,channel=channel, Func=value[0], Data=int(value[1]), unit=value[2],description=description)
+	def _ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate_us, description = '',final_value=None):
 		'''
 			ramp
-				-t       	: intial time
-				-dt      	: duration
-				-channel 	: bitstring representing which channel(s) is activated
-				-Func    	: parameter changed. {'freq': 0, 'frequency':0, 'phas': 1, 'phase':1, 'ampl': 2, 'amplitude':2, 'amp': 2}
-				-Data    	: initial value of the ramped parameter.
-				-unit1   	: initial value units.
-				-rampstep	: stepsize of ramped parameter per step.
-				-unit2   	: rampstep units.
-				-ramprate	: single step duration in us. It is NOT a rate
+				-t          	: intial time
+				-dt         	: duration
+				-channel    	: bitstring representing which channel(s) is activated
+				-Func       	: parameter changed. {'freq': 0, 'frequency':0, 'phas': 1, 'phase':1, 'ampl': 2, 'amplitude':2, 'amp': 2}
+				-Data       	: initial value of the ramped parameter.
+				-unit1      	: initial value units.
+				-rampstep   	: stepsize of ramped parameter per step.
+				-unit2      	: rampstep units.
+				-ramprate_us	: single step duration in us. It is NOT a rate
+				-final_value	: tuple from self.ramp. Just for that functions use.
 		'''
+		ramprate=ramprate_us
 		# generate ramp of FPGA_DDS, Three commands: set initial, set ramp, and stop ramp by setting end point. 
 		# ramp rate is in unit of 1us
 		us = 10**-6
@@ -202,13 +208,26 @@ class FPGA_DDS(TriggerableDevice):
 		self.commands_human.append([t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate, description])
 		return dt
 
-	def ramp1(self, t, duration, channel = int(0b0001), Func='freq', Data=0, unit1 = 'MHz', rampstep=5, unit2='Hz',ramprate=5, description = ''):
+	def ramp(self, t, duration, channel, initial_value, final_value,number_of_steps, description = ''):
 		'''
 			# To Do
 				[] = make ramp1 function human-readable. I.e., idelly we'd like to set initial and final ramp values and ramp time.
+
+				t              	- initial time
+				duration       	- duration
+				channel        	- binary string, int(0b0100) is the third channel.
+				initial_value  	- tuple, e.g., ('freq',100,'MHz'). see self._ramp for more.
+				final_value    	- same format as initial_value
+				number_of_steps	- ...
+				description    	- see self._ramp
+
 		'''
-		self.ramp(t, duration, channel=channel, 
-			Func = Func, Data = Data, unit1 = unit1, 
-			rampstep = rampstep, unit2=unit2, 
-			ramprate = ramprate, description = description
+		us = 1e-6
+		if initial_value[2] != final_value[2]:
+			print("Unequal UNITS!!!")
+			raise LabscriptError("FPGA_DDS: Unequal Units in Ramp.")
+		return self._ramp(t, duration, channel=channel, 
+			Func = initial_value[0], Data = int(initial_value[1]), unit1 = initial_value[2], 
+			rampstep = (final_value[1] - initial_value[1])/(number_of_steps), unit2=final_value[2], 
+			ramprate_us = (duration/us)/number_of_steps, description = description, final_value=final_value
 			)
