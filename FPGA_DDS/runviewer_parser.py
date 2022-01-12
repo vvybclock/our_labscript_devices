@@ -13,13 +13,19 @@ from labscript_devices import runviewer_parser
 from labscript import LabscriptError
 import h5py
 import numpy as np
-    
+import sys    
+
+_RUNVIEWER_DEBUG = False
+_DEBUG_FILE_LOC  = "C:\\Users\\YbMinutes\\Desktop\\Labscript\\runviewer_debug.txt"
+_TRACEBACK_FILE_LOC  = "C:\\Users\\YbMinutes\\Desktop\\Labscript\\runviewer_traceback.txt"
+
 @runviewer_parser
 class FPGA_DDSParser(object):
 	def __init__(self, path, device):
 		self.path = path
 		self.name = device.name
 		self.device = device
+		self.DEBUG	= _RUNVIEWER_DEBUG
 		self.ClockRate = 480*10**6 
 		# number of bits for frequency word
 		self.freqbits = 32
@@ -49,6 +55,8 @@ class FPGA_DDSParser(object):
 			RampRate = instructions["RampRate"]
 			Data = instructions["Data"]
 		try:
+			if self.DEBUG: sys.stdout = open(_DEBUG_FILE_LOC, 'w')
+			print("in try:")
 			# print(Time)
 			# print(Ch)
 			# print(Func)
@@ -144,7 +152,7 @@ class FPGA_DDSParser(object):
 							if i == Numofsteps-1 or i == 0:
 								LabscriptError("First and last entry can't be ramp") 
 							else:
-								NumofRampStep = round((Time[i+1]-Time[i])/100/RampRate[i])
+								NumofRampStep = int(round((Time[i+1]-Time[i])/100/RampRate[i]))
 								counter = 0
 								Ch_freq_last = Ch_freq[j][-1]
 								Ch_phase_last = Ch_phase[j][-1]
@@ -177,9 +185,9 @@ class FPGA_DDSParser(object):
 						pass
 
 
-			# print(Ch_freq)
-			# print(Ch_phase)
-			# print(Ch_amp)
+			print(Ch_freq)
+			print(Ch_phase)
+			print(Ch_amp)
 
 
 
@@ -192,7 +200,11 @@ class FPGA_DDSParser(object):
 					add_trace_overwrite(shot, f"{self.name}/Ch{j}/amp", (Ch_time[j], Ch_amp[j]), self.name, '')
 			
 		except Exception as e:
-			# print(e)
+			# print(e.__traceback__)
+			import traceback
+			print(traceback.format_exc())
+			print(e)
+			# traceback.print_exc(file=_TRACEBACK_FILE_LOC)
 			sys.stdout = sys.__stdout__
 		else:
 			pass
