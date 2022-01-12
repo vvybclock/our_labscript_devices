@@ -130,17 +130,17 @@ class FPGA_DDS(TriggerableDevice):
 		 'Degree': 1, 'Degrees':1, 'Rads': 180/(3.1415926), 'None':1, '1':1}
 		func = Funcs[Func]
 		if (func == 0):
-			data = round(Data*Units[unit]/self.ClockRate*2**self.freqbits)
+			data = int(round(Data*Units[unit]/self.ClockRate*2**self.freqbits))
 			data = data & 0xffffffff
 		elif (func == 1):
 			Data = Data*Units[unit]
 			Data = Data % 360
-			data = round(Data/360*2**self.phasbits)
+			data = int(round(Data/360*2**self.phasbits))
 			data = data & 0x00003fff
 		elif (func == 2):
 			if (Data!=1):
 				Data = Data%1
-			data = round(Data*(2**self.amplbits-1))
+			data = int(round(Data*(2**self.amplbits-1)))
 		self.commands_human.append({'Time':t, 'Ch': channel, 'Func': Func, 'Data': Data,
 								 'Unit':unit, 'Description': description})
 		self.add_instruction(t, {'Ch': channel, 'Func': func, 'RampRate': 0, 'Data': data,'Description': description})
@@ -148,7 +148,7 @@ class FPGA_DDS(TriggerableDevice):
 		'''
 		wrapper for _constant. value is a tuple e.g. ('phase',2,'1'). See _constant for more.
 		'''
-		self._constant(t=t,channel=channel, Func=value[0], Data=int(value[1]), unit=value[2],description=description)
+		self._constant(t=t,channel=channel, Func=value[0], Data=value[1], unit=value[2],description=description)
 	def _ramp(self, t, dt, channel, Func, Data, unit1, rampstep, unit2, ramprate_us, description = '',final_value=None):
 		'''
 			ramp
@@ -227,7 +227,7 @@ class FPGA_DDS(TriggerableDevice):
 			print("Unequal UNITS!!!")
 			raise LabscriptError("FPGA_DDS: Unequal Units in Ramp.")
 		return self._ramp(t, duration, channel=channel, 
-			Func = initial_value[0], Data = int(initial_value[1]), unit1 = initial_value[2], 
+			Func = initial_value[0], Data = initial_value[1], unit1 = initial_value[2], 
 			rampstep = (final_value[1] - initial_value[1])/(number_of_steps), unit2=final_value[2], 
 			ramprate_us = (duration/us)/number_of_steps, description = description, final_value=final_value
 			)
