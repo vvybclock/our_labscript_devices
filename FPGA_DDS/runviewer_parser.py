@@ -209,7 +209,8 @@ class FPGA_DDSParser(object):
 		else:
 			pass
 		finally:
-			pass	
+			pass
+		sys.stdout = sys.__stdout__
 		# This device don't trigger any other devices
 		trigger = {}
 		return trigger
